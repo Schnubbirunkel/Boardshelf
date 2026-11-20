@@ -48,12 +48,7 @@ adb shell settings put global animator_duration_scale 1
 adb shell am force-stop "$PKG"
 adb shell "am start -W -n $PKG/$ACT --es lang de" > /dev/null
 sleep 6
-adb shell screenrecord --time-limit 5 --bit-rate 6000000 /sdcard/open.mp4 &
-REC=$!
-sleep 1.5
-adb shell input tap 100 560
-sleep 5
-wait $REC || true
+adb shell "screenrecord --time-limit 6 --bit-rate 6000000 /sdcard/open.mp4 & sleep 1.5; input tap 100 560; wait" || true
 sleep 3
 adb pull /sdcard/open.mp4 "$OUT/open.mp4"
 rm -f "$OUT"/*_0_warmup.png
