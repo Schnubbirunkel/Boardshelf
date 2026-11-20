@@ -5,6 +5,8 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -33,7 +35,10 @@ jobs:
 
       - name: Version
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="0.0.0-dev.${{ github.run_number }}"; fi
+          TAG="${{ github.event.release.tag_name }}"
+          [ -z "$TAG" ] && [[ "$GITHUB_REF" == refs/tags/v* ]] && TAG="$GITHUB_REF_NAME"
+          if [ -n "$TAG" ]; then V="${TAG#v}"; else V="0.0.0-dev.${{ github.run_number }}"; fi
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
           echo "APP_VERSION=$V" >> "$GITHUB_ENV"
 
       - name: Build APKs
@@ -55,9 +60,9 @@ jobs:
           path: dist/*.apk
 
       - name: Attach APK to release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: env.RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Boardshelf $APP_VERSION" --notes "Boardshelf $APP_VERSION"
-          gh release upload "$GITHUB_REF_NAME" "dist/Boardshelf-$APP_VERSION.apk" --clobber
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --title "Boardshelf $APP_VERSION" --notes "Boardshelf $APP_VERSION"
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "dist/Boardshelf-$APP_VERSION.apk" --clobber
