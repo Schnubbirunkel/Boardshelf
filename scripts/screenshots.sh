@@ -52,5 +52,5 @@ adb shell "screenrecord --time-limit 6 --bit-rate 6000000 /sdcard/open.mp4 & sle
 sleep 3
 adb pull /sdcard/open.mp4 "$OUT/open.mp4"
 rm -f "$OUT"/*_0_warmup.png
-adb logcat -d -v brief Boardshelf:V AndroidRuntime:E System.err:W "*:S" > "$OUT/logcat.txt" || true
+adb logcat -d -v brief "*:E" > "$OUT/logcat.txt" || true
 ls -la "$OUT"
