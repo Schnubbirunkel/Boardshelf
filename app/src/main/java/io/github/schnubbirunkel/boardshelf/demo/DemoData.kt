@@ -177,7 +177,7 @@ object DemoData {
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), Paint().apply {
-            shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), 0xFF8B5A2B.toInt(), 0xFF5C3A1A.toInt(), Shader.TileMode.CLAMP)
+            shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), 0xFF2E6B5E.toInt(), 0xFF1D4A41.toInt(), Shader.TileMode.CLAMP)
         })
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
         // board with hex grid

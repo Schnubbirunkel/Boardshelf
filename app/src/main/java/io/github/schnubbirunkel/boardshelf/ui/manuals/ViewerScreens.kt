@@ -87,10 +87,10 @@ fun ManualViewerScreen(manualId: Long, onBack: () -> Unit) {
     val repo = LocalContext.current.app().repository
     val manual by produceState<Manual?>(null, manualId) { value = repo.manual(manualId) }
     Scaffold(
-        containerColor = Color(0xFF1B1410),
+        containerColor = Color(0xFF111418),
         topBar = {
             TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF241A14)),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1F25)),
                 title = { Text(manual?.title ?: "", maxLines = 1) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) } }
             )

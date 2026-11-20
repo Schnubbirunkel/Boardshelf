@@ -81,7 +81,7 @@ import io.github.schnubbirunkel.boardshelf.data.Shelf
 import io.github.schnubbirunkel.boardshelf.ui.appViewModel
 import io.github.schnubbirunkel.boardshelf.ui.box3d.ShelfBox
 import io.github.schnubbirunkel.boardshelf.ui.theme.ShelfLabelStyle
-import io.github.schnubbirunkel.boardshelf.ui.theme.Wood
+import io.github.schnubbirunkel.boardshelf.ui.theme.Deco
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -122,10 +122,10 @@ fun ShelfScreen(
     var menu by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = Wood.wall,
+        containerColor = Deco.wall,
         topBar = {
             TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Wood.wallLight),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Deco.wallLight),
                 title = {
                     if (searching) {
                         TextField(
@@ -225,7 +225,7 @@ private fun ShelfWall(
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Wood.wallLight, Wood.wall)))
+            .background(Brush.verticalGradient(listOf(Deco.wallLight, Deco.wall)))
     ) {
         val widthPx = constraints.maxWidth.toFloat()
         val viewportH = constraints.maxHeight.toFloat()
@@ -329,12 +329,12 @@ private fun ShelfWall(
                     Text(
                         sp.shelf.name,
                         style = ShelfLabelStyle,
-                        color = Color(0xFF3B2614),
+                        color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .offset { IntOffset((dims.side + dims.inner).roundToInt(), (sp.boardTop + dims.board * 0.18f).roundToInt()) }
-                            .background(Wood.brass.copy(alpha = 0.85f), RoundedCornerShape(3.dp))
+                            .background(Deco.label.copy(alpha = 0.9f), RoundedCornerShape(3.dp))
                             .padding(horizontal = 6.dp)
                     )
                 }
@@ -385,7 +385,7 @@ private fun DrawScope.drawShelf(layout: ShelfLayout, d: ShelfDims) {
     layout.shelves.forEach { sp ->
         drawRect(
             Brush.verticalGradient(
-                0f to Color(0xFF120B07), 0.25f to Wood.back, 1f to Color(0xFF2E2016),
+                0f to Color(0xFF7E8790), 0.22f to Deco.back, 1f to Color(0xFFCDD3D9),
                 startY = sp.top, endY = sp.boardTop
             ),
             topLeft = Offset(d.side, sp.top), size = Size(w - 2 * d.side, sp.height)
@@ -393,33 +393,33 @@ private fun DrawScope.drawShelf(layout: ShelfLayout, d: ShelfDims) {
         // subtle vertical plank seams of the back panel
         var x = d.side + 90f
         while (x < w - d.side) {
-            drawLine(Color(0x22000000), Offset(x, sp.top), Offset(x, sp.boardTop), strokeWidth = 2f)
+            drawLine(Color(0x14000000), Offset(x, sp.top), Offset(x, sp.boardTop), strokeWidth = 2f)
             x += 180f
         }
     }
-    val plank = Brush.verticalGradient(listOf(Wood.plankLight, Wood.plank, Wood.plankDark))
+    val plank = Brush.verticalGradient(listOf(Deco.plankLight, Deco.plank, Deco.plankDark))
     // crown
     drawRect(plank, topLeft = Offset(0f, top), size = Size(w, d.crown))
     // boards
     layout.shelves.forEach { sp ->
         drawRect(
-            Brush.verticalGradient(listOf(Wood.plankLight, Wood.plank, Wood.plankDark), startY = sp.boardTop, endY = sp.boardTop + d.board),
+            Brush.verticalGradient(listOf(Deco.plankLight, Deco.plank, Deco.plankDark), startY = sp.boardTop, endY = sp.boardTop + d.board),
             topLeft = Offset(0f, sp.boardTop), size = Size(w, d.board)
         )
-        drawLine(Color(0x55FFFFFF), Offset(0f, sp.boardTop + 1f), Offset(w, sp.boardTop + 1f), strokeWidth = 2f)
+        drawLine(Color(0xFFFFFFFF), Offset(0f, sp.boardTop + 1f), Offset(w, sp.boardTop + 1f), strokeWidth = 2f)
         for (k in 1..3) {
             val gy = sp.boardTop + d.board * k / 4f
-            drawLine(Wood.grain, Offset(0f, gy), Offset(w, gy + (k - 2) * 3f), strokeWidth = 1.5f)
+            drawLine(Deco.grain, Offset(0f, gy), Offset(w, gy + (k - 2) * 3f), strokeWidth = 1.5f)
         }
         // shadow that the board casts onto the compartment below
         drawRect(
-            Brush.verticalGradient(listOf(Color(0x88000000), Color.Transparent), startY = sp.boardTop + d.board, endY = sp.boardTop + d.board + 40f),
+            Brush.verticalGradient(listOf(Color(0x55000000), Color.Transparent), startY = sp.boardTop + d.board, endY = sp.boardTop + d.board + 40f),
             topLeft = Offset(d.side, sp.boardTop + d.board), size = Size(w - 2 * d.side, 40f)
         )
     }
     // side walls
-    val sideBrush = Brush.horizontalGradient(listOf(Wood.plankDark, Wood.plank, Wood.plankLight, Wood.plank), startX = 0f, endX = d.side)
+    val sideBrush = Brush.horizontalGradient(listOf(Deco.plankDark, Deco.plank, Deco.plankLight, Deco.plank), startX = 0f, endX = d.side)
     drawRect(sideBrush, topLeft = Offset(0f, top), size = Size(d.side, bottom - top))
-    val sideBrushR = Brush.horizontalGradient(listOf(Wood.plank, Wood.plankLight, Wood.plank, Wood.plankDark), startX = w - d.side, endX = w)
+    val sideBrushR = Brush.horizontalGradient(listOf(Deco.plank, Deco.plankLight, Deco.plank, Deco.plankDark), startX = w - d.side, endX = w)
     drawRect(sideBrushR, topLeft = Offset(w - d.side, top), size = Size(d.side, bottom - top))
 }

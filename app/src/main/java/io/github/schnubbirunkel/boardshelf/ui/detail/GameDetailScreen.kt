@@ -54,7 +54,7 @@ import io.github.schnubbirunkel.boardshelf.ui.box3d.Box3DViewer
 import io.github.schnubbirunkel.boardshelf.ui.errorText
 import io.github.schnubbirunkel.boardshelf.ui.rememberCamera
 import io.github.schnubbirunkel.boardshelf.ui.rememberImagePicker
-import io.github.schnubbirunkel.boardshelf.ui.theme.Wood
+import io.github.schnubbirunkel.boardshelf.ui.theme.Deco
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,7 +133,7 @@ fun GameDetailScreen(
                 Modifier
                     .fillMaxWidth()
                     .height(360.dp)
-                    .background(Brush.radialGradient(listOf(Color(0xFF6B4A33), Wood.wall), radius = 900f))
+                    .background(Brush.radialGradient(listOf(Color(0xFF34404D), Deco.wall), radius = 900f))
             ) {
                 Box3DViewer(g, Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = 24.dp, end = 24.dp, bottom = 8.dp))
             }

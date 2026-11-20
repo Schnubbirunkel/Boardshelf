@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.schnubbirunkel.boardshelf.R
 import io.github.schnubbirunkel.boardshelf.data.Game
-import io.github.schnubbirunkel.boardshelf.ui.theme.Wood
+import io.github.schnubbirunkel.boardshelf.ui.theme.Deco
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -47,7 +47,7 @@ fun RatingTab(g: Game, vm: GameDetailViewModel) {
                 Text(stringResource(R.string.rating_overall), style = MaterialTheme.typography.titleMedium)
                 Text(
                     if (g.myRating > 0) String.format(Locale.getDefault(), "%.1f / 10", g.myRating) else stringResource(R.string.rating_none),
-                    style = MaterialTheme.typography.headlineSmall, color = Wood.brass
+                    style = MaterialTheme.typography.headlineSmall, color = Deco.brass
                 )
                 // 5 stars, each half star = 1 point -> 0..10
                 StarBar(value = g.myRating / 2f, stars = 5, size = 44.dp, half = true) { v ->
@@ -113,7 +113,7 @@ fun StarBar(value: Float, stars: Int, size: Dp, half: Boolean, onChange: (Float)
                         }
                     }
             ) {
-                Icon(icon, null, tint = Wood.brass, modifier = Modifier.size(size))
+                Icon(icon, null, tint = Deco.brass, modifier = Modifier.size(size))
             }
         }
     }
