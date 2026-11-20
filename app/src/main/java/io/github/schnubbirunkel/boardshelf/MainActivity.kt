@@ -6,6 +6,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,26 +48,34 @@ class MainActivity : AppCompatActivity() {
                 LaunchedEffect(pendingRoute) {
                     pendingRoute?.let { nav.navigate(it); pendingRoute = null }
                 }
-                NavHost(navController = nav, startDestination = "shelf") {
+                NavHost(
+                    navController = nav, startDestination = "shelf",
+                    enterTransition = { fadeIn(tween(220)) },
+                    exitTransition = { fadeOut(tween(220)) },
+                    popEnterTransition = { fadeIn(tween(220)) },
+                    popExitTransition = { fadeOut(tween(220)) },
+                ) {
                     composable("shelf") {
                         ShelfScreen(
-                            onOpenGame = { nav.navigate("game/$it") },
+                            onOpenGame = { nav.navigate("game/$it?shelf=true") },
                             onAdd = { nav.navigate("add") },
                             onSettings = { nav.navigate("settings") },
                             onManageShelves = { nav.navigate("shelves") },
                         )
                     }
                     composable(
-                        "game/{id}?tab={tab}",
+                        "game/{id}?tab={tab}&shelf={shelf}",
                         arguments = listOf(
                             navArgument("id") { type = NavType.LongType },
                             navArgument("tab") { type = NavType.IntType; defaultValue = 0 },
+                            navArgument("shelf") { type = NavType.BoolType; defaultValue = false },
                         )
                     ) { entry ->
                         val id = entry.arguments?.getLong("id") ?: return@composable
                         GameDetailScreen(
                             gameId = id,
                             initialTab = entry.arguments?.getInt("tab") ?: 0,
+                            fromShelf = entry.arguments?.getBoolean("shelf") ?: false,
                             onBack = { nav.popBackStack() },
                             onOpenManual = { nav.navigate("manual/$it") },
                             onOpenPhoto = { nav.navigate("photo/$it") },

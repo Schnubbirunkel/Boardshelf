@@ -6,11 +6,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import io.github.schnubbirunkel.boardshelf.data.Game
 import io.github.schnubbirunkel.boardshelf.data.Shelf
-import io.github.schnubbirunkel.boardshelf.ui.box3d.BoxRenderer
 
-const val COVER_YAW = -16f
-const val SPINE_YAW = -82f
-const val SHELF_PITCH = 10f
+/** Boxes stand with their spine facing straight out. */
+const val SPINE_YAW = -90f
+const val SHELF_PITCH = 0f
 
 /** All measurements of the shelf in pixels. */
 class ShelfDims(density: Density, val width: Float, val startY: Float, val bottomExtra: Float) {
@@ -21,8 +20,8 @@ class ShelfDims(density: Density, val width: Float, val startY: Float, val botto
     val board = density.px(18f)
     val crown = density.px(16f)
     val gapCover = density.px(7f)
-    val gapSpine = density.px(1.5f)
-    val pxPerCm = density.px(4.0f)
+    val gapSpine = density.px(1f)
+    val pxPerCm = density.px(4.3f)
     val maxBoxHeight = lineHeight - density.px(12f)
     val left get() = side + inner
     val right get() = width - side - inner
@@ -41,15 +40,9 @@ data class ShelfPos(val shelf: Shelf, val top: Float, val height: Float, val lin
 
 data class ShelfLayout(val items: Map<Long, ItemPos>, val shelves: List<ShelfPos>, val totalHeight: Float)
 
-/** Footprint of a box on the shelf in cm (projected width/height for the shelf viewing angle). */
-private val footprintCache = HashMap<String, Pair<Float, Float>>()
-
-fun footprintCm(g: Game, spine: Boolean): Pair<Float, Float> {
-    val key = "${g.boxWidthCm}|${g.boxHeightCm}|${g.boxDepthCm}|$spine"
-    return footprintCache.getOrPut(key) {
-        BoxRenderer.projectedSize(g.boxWidthCm, g.boxHeightCm, g.boxDepthCm, if (spine) SPINE_YAW else COVER_YAW, SHELF_PITCH)
-    }
-}
+/** Footprint of a box on the shelf in cm: it stands upright with the spine (depth × height) facing out. */
+@Suppress("UNUSED_PARAMETER")
+fun footprintCm(g: Game, spine: Boolean): Pair<Float, Float> = g.boxDepthCm to g.boxHeightCm
 
 fun computeLayout(
     shelves: List<Shelf>,

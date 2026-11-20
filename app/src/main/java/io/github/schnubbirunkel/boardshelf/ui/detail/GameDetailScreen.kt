@@ -56,11 +56,16 @@ import io.github.schnubbirunkel.boardshelf.ui.rememberCamera
 import io.github.schnubbirunkel.boardshelf.ui.rememberImagePicker
 import io.github.schnubbirunkel.boardshelf.ui.theme.Deco
 
+const val DETAIL_YAW = -28f
+const val DETAIL_PITCH = 14f
+const val DETAIL_HEADER_HEIGHT = 360
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameDetailScreen(
     gameId: Long,
     initialTab: Int,
+    fromShelf: Boolean = false,
     onBack: () -> Unit,
     onOpenManual: (Long) -> Unit,
     onOpenPhoto: (Long) -> Unit,
@@ -132,10 +137,10 @@ fun GameDetailScreen(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(360.dp)
+                    .height(DETAIL_HEADER_HEIGHT.dp)
                     .background(Brush.radialGradient(listOf(Color(0xFF34404D), Deco.wall), radius = 900f))
             ) {
-                Box3DViewer(g, Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = 24.dp, end = 24.dp, bottom = 8.dp))
+                Box3DViewer(g, intro = !fromShelf, modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = 24.dp, end = 24.dp, bottom = 8.dp))
             }
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             Text(

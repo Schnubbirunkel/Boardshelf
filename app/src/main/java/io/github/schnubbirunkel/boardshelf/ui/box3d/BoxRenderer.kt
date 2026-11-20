@@ -28,6 +28,21 @@ object BoxRenderer {
         BOUNDS_BOTTOM,
         /** Constant scale based on the bounding sphere, centred (rotating viewer). */
         SPHERE_CENTER,
+        /** Use the given scale and origin (for animations). */
+        EXPLICIT,
+    }
+
+    /** Scale and origin that [Fit.SPHERE_CENTER] / [Fit.BOUNDS_BOTTOM] would use. */
+    fun placement(w: Float, h: Float, d: Float, yawDeg: Float, pitchDeg: Float, target: RectF, fit: Fit): FloatArray = when (fit) {
+        Fit.BOUNDS_BOTTOM -> {
+            val b = bounds(w, h, d, yawDeg, pitchDeg)
+            val sc = min(target.width() / b.width(), target.height() / b.height())
+            floatArrayOf(sc, target.centerX() - b.centerX() * sc, target.bottom - b.bottom * sc)
+        }
+        else -> {
+            val diag = sqrt(w * w + h * h + d * d)
+            floatArrayOf(min(target.width(), target.height()) / (diag * 1.12f), target.centerX(), target.centerY())
+        }
     }
 
     private class Face(val corners: Array<IntArray>, val normal: FloatArray, val pick: (BoxTextures) -> Bitmap?)
@@ -113,24 +128,13 @@ object BoxRenderer {
         fallbackColor: Int = Color.DKGRAY,
         shadow: Boolean = true,
         dim: Float = 1f,
+        explicit: FloatArray? = null,
     ) {
         val pts = project(w, h, d, yawDeg, pitchDeg)
-        val scale: Float
-        val ox: Float
-        val oy: Float
-        when (fit) {
-            Fit.BOUNDS_BOTTOM -> {
-                val b = bounds(w, h, d, yawDeg, pitchDeg)
-                scale = min(target.width() / b.width(), target.height() / b.height())
-                ox = target.centerX() - b.centerX() * scale
-                oy = target.bottom - b.bottom * scale
-            }
-            Fit.SPHERE_CENTER -> {
-                val diag = sqrt(w * w + h * h + d * d)
-                scale = min(target.width(), target.height()) / (diag * 1.12f)
-                ox = target.centerX(); oy = target.centerY()
-            }
-        }
+        val pl = if (fit == Fit.EXPLICIT && explicit != null) explicit else placement(w, h, d, yawDeg, pitchDeg, target, fit)
+        val scale = pl[0]
+        val ox = pl[1]
+        val oy = pl[2]
         for (i in 0 until 8) {
             pts[i * 2] = pts[i * 2] * scale + ox
             pts[i * 2 + 1] = pts[i * 2 + 1] * scale + oy

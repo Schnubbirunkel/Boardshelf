@@ -34,7 +34,7 @@ for lang in de en; do
   adb shell cmd locale set-app-locales "$PKG" --locales "$lang" || true
   shot "${lang}_0_warmup" 8 0 --es lang "$lang"
   shot "${lang}_1_shelf" 20 0 --ez seed_demo true --ez spine false
-  shot "${lang}_2_spines" 6 0 --ez spine true
+  shot "${lang}_2_shelf_lower" 6 1
   shot "${lang}_3_box3d" 6 0 --ez spine false --es route "'game/1'"
   shot "${lang}_4_rating" 6 1 --es route "'game/7?tab=1'"
   shot "${lang}_5_savestates" 6 1 --es route "'game/1?tab=2'"

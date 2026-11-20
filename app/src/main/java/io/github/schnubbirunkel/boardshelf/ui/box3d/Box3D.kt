@@ -15,6 +15,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.IntSize
+import io.github.schnubbirunkel.boardshelf.ui.detail.DETAIL_PITCH
+import io.github.schnubbirunkel.boardshelf.ui.detail.DETAIL_YAW
+import kotlin.math.roundToInt
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
@@ -40,34 +48,42 @@ fun rememberBoxTextures(game: Game, size: Int, full: Boolean): BoxTextures? {
     return state.value
 }
 
-/** A small, static 3D box as it stands on the shelf. */
+/** A box standing on the shelf: only its spine, straight and flat, no perspective. */
 @Composable
-fun ShelfBox(game: Game, yaw: Float, pitch: Float, modifier: Modifier, dim: Float = 1f) {
+fun ShelfBox(game: Game, @Suppress("UNUSED_PARAMETER") yaw: Float, @Suppress("UNUSED_PARAMETER") pitch: Float, modifier: Modifier, dim: Float = 1f) {
     val tex = rememberBoxTextures(game, 300, full = false)
     Canvas(modifier) {
-        drawIntoCanvas { c ->
-            BoxRenderer.draw(
-                c.nativeCanvas, tex, game.boxWidthCm, game.boxHeightCm, game.boxDepthCm,
-                yaw, pitch, RectF(0f, 0f, size.width, size.height), BoxRenderer.Fit.BOUNDS_BOTTOM,
-                fallbackColor = TextureCache.colorFromName(game.name), shadow = false, dim = dim,
+        val spine = tex?.right
+        if (spine != null) {
+            drawImage(
+                spine.asImageBitmap(),
+                dstSize = IntSize(size.width.roundToInt().coerceAtLeast(1), size.height.roundToInt().coerceAtLeast(1)),
+                alpha = dim,
+                filterQuality = FilterQuality.Medium,
             )
+        } else {
+            drawRect(Color(TextureCache.colorFromName(game.name)), alpha = dim)
         }
+        // subtle edges so neighbouring spines stay distinguishable
+        drawRect(Color.Black.copy(alpha = 0.35f), style = Stroke(width = 1.5f))
+        drawRect(Color.White.copy(alpha = 0.12f), size = androidx.compose.ui.geometry.Size(size.width * 0.18f, size.height))
     }
 }
 
 /** Interactive viewer: drag to rotate (with inertia), double tap to reset. */
 @Composable
-fun Box3DViewer(game: Game, modifier: Modifier = Modifier) {
+fun Box3DViewer(game: Game, modifier: Modifier = Modifier, intro: Boolean = true) {
     val tex = rememberBoxTextures(game, 900, full = true)
-    var yaw by remember { mutableFloatStateOf(-70f) }
-    var pitch by remember { mutableFloatStateOf(14f) }
+    var yaw by remember { mutableFloatStateOf(if (intro) -70f else DETAIL_YAW) }
+    var pitch by remember { mutableFloatStateOf(DETAIL_PITCH) }
     val scope = rememberCoroutineScope()
     val spinHolder = remember { arrayOfNulls<Job>(1) }
 
     LaunchedEffect(game.id) {
+        if (!intro) return@LaunchedEffect
         // small intro turn
         val a = Animatable(-70f)
-        a.animateTo(-28f, tween(900)) { yaw = value }
+        a.animateTo(DETAIL_YAW, tween(900)) { yaw = value }
     }
 
     Canvas(
@@ -80,8 +96,8 @@ fun Box3DViewer(game: Game, modifier: Modifier = Modifier) {
                         val startPitch = pitch
                         val a = Animatable(0f)
                         a.animateTo(1f, tween(500)) {
-                            yaw = startYaw + (-28f - startYaw) * value
-                            pitch = startPitch + (14f - startPitch) * value
+                            yaw = startYaw + (DETAIL_YAW - startYaw) * value
+                            pitch = startPitch + (DETAIL_PITCH - startPitch) * value
                         }
                     }
                 })

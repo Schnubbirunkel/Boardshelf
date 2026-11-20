@@ -58,6 +58,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -104,7 +107,6 @@ class ShelfViewModel(private val repo: Repository) : ViewModel() {
         viewModelScope.launch { repo.applyOrder(order) }
     }
 
-    fun toggleSpine() = repo.settings.update { it.copy(spineMode = !it.spineMode) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,7 +122,9 @@ fun ShelfScreen(
     var searching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     var menu by remember { mutableStateOf(false) }
+    var opening by remember { mutableStateOf<Opening?>(null) }
 
+    Box(Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = Deco.wall,
         topBar = {
@@ -155,12 +159,6 @@ fun ShelfScreen(
                     IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
                         Icon(if (searching) Icons.Default.Close else Icons.Default.Search, stringResource(R.string.action_search))
                     }
-                    IconButton(onClick = vm::toggleSpine) {
-                        Icon(
-                            if (state?.spineMode == true) Icons.Default.ViewModule else Icons.AutoMirrored.Filled.ViewList,
-                            stringResource(if (state?.spineMode == true) R.string.action_show_covers else R.string.action_show_spines)
-                        )
-                    }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -182,8 +180,10 @@ fun ShelfScreen(
         val st = state ?: return@Scaffold
         Box(Modifier.fillMaxSize()) {
             ShelfWall(
-                shelves = st.shelves, games = st.games, spineMode = st.spineMode, query = query,
-                onOpen = onOpenGame, onOrder = vm::applyOrder, padding = padding
+                shelves = st.shelves, games = st.games, spineMode = true, query = query,
+                hiddenId = opening?.game?.id,
+                onOpen = { id, rect -> if (opening == null) st.games.firstOrNull { it.id == id }?.let { opening = Opening(it, rect) } },
+                onOrder = vm::applyOrder, padding = padding
             )
             if (st.games.isEmpty()) {
                 ElevatedCard(Modifier.align(Alignment.Center).padding(32.dp)) {
@@ -195,6 +195,10 @@ fun ShelfScreen(
                 }
             }
         }
+    }
+    opening?.let { o ->
+        OpeningOverlay(o, onFinished = { onOpenGame(o.game.id) }, onReset = { opening = null })
+    }
     }
 }
 
@@ -216,7 +220,8 @@ private fun ShelfWall(
     games: List<Game>,
     spineMode: Boolean,
     query: String,
-    onOpen: (Long) -> Unit,
+    hiddenId: Long?,
+    onOpen: (Long, Rect) -> Unit,
     onOrder: (Map<Long, List<Long>>) -> Unit,
     padding: PaddingValues,
 ) {
@@ -247,6 +252,7 @@ private fun ShelfWall(
             computeLayout(shelves, displayOrder, gamesById, dims, spineMode)
         }
         val scroll = rememberScrollState()
+        val origin = remember { FloatArray(2) }
         val currentLayout by rememberUpdatedState(layout)
         val currentOrder by rememberUpdatedState(order)
         val currentGames by rememberUpdatedState(gamesById)
@@ -288,8 +294,15 @@ private fun ShelfWall(
                 Modifier
                     .fillMaxWidth()
                     .height(with(density) { layout.totalHeight.toDp() })
+                    .onGloballyPositioned { c -> c.positionInWindow().let { origin[0] = it.x; origin[1] = it.y } }
                     .pointerInput(Unit) {
-                        detectTapGestures(onTap = { p -> currentLayout.hitTest(p)?.let(onOpen) })
+                        detectTapGestures(onTap = { p ->
+                            val l = currentLayout
+                            l.hitTest(p)?.let { id ->
+                                val r = l.items.getValue(id).rect
+                                onOpen(id, r.translate(Offset(origin[0], origin[1])))
+                            }
+                        })
                     }
                     .pointerInput(Unit) {
                         detectDragGesturesAfterLongPress(
@@ -341,14 +354,14 @@ private fun ShelfWall(
 
                 val dragging = drag
                 layout.items.values.forEach { item ->
-                    if (item.id == dragging?.id) return@forEach
+                    if (item.id == dragging?.id || item.id == hiddenId) return@forEach
                     val g = gamesById[item.id] ?: return@forEach
                     key(item.id) {
                         val pos by animateIntOffsetAsState(IntOffset(item.x.roundToInt(), item.y.roundToInt()), label = "box")
                         val match = q.isEmpty() || g.name.lowercase().contains(q) ||
                             (g.designers?.lowercase()?.contains(q) == true) || (g.categories?.lowercase()?.contains(q) == true)
                         ShelfBox(
-                            g, if (spineMode) SPINE_YAW else COVER_YAW, SHELF_PITCH,
+                            g, SPINE_YAW, SHELF_PITCH,
                             Modifier
                                 .offset { pos }
                                 .size(with(density) { item.w.toDp() }, with(density) { item.h.toDp() })
@@ -362,7 +375,7 @@ private fun ShelfWall(
                     if (g != null) {
                         val tl = dragging.pointer - dragging.grab
                         ShelfBox(
-                            g, if (spineMode) SPINE_YAW else COVER_YAW, SHELF_PITCH,
+                            g, SPINE_YAW, SHELF_PITCH,
                             Modifier
                                 .offset { IntOffset(tl.x.roundToInt(), tl.y.roundToInt()) }
                                 .size(with(density) { dragging.size.width.toDp() }, with(density) { dragging.size.height.toDp() })
