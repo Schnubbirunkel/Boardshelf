@@ -2,8 +2,8 @@
 # Takes the README screenshots on a running emulator (used by .github/workflows/screenshots.yml).
 set -euo pipefail
 
-PKG=io.github.schnubbirunkel.ludothek.debug
-ACT=io.github.schnubbirunkel.ludothek.MainActivity
+PKG=io.github.schnubbirunkel.boardshelf.debug
+ACT=io.github.schnubbirunkel.boardshelf.MainActivity
 OUT=docs/screenshots
 mkdir -p "$OUT"
 

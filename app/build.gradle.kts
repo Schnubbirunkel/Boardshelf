@@ -9,11 +9,11 @@ val versionNameProp = (project.findProperty("appVersionName") as String?) ?: "1.
 val versionCodeProp = (project.findProperty("appVersionCode") as String?)?.toInt() ?: 1
 
 android {
-    namespace = "io.github.schnubbirunkel.ludothek"
+    namespace = "io.github.schnubbirunkel.boardshelf"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.schnubbirunkel.ludothek"
+        applicationId = "io.github.schnubbirunkel.boardshelf"
         minSdk = 26
         targetSdk = 35
         versionCode = versionCodeProp
@@ -22,12 +22,12 @@ android {
 
     signingConfigs {
         create("release") {
-            val ks = System.getenv("LUDOTHEK_KEYSTORE")
+            val ks = System.getenv("BOARDSHELF_KEYSTORE")
             if (ks != null && file(ks).exists()) {
                 storeFile = file(ks)
-                storePassword = System.getenv("LUDOTHEK_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("LUDOTHEK_KEY_ALIAS")
-                keyPassword = System.getenv("LUDOTHEK_KEY_PASSWORD")
+                storePassword = System.getenv("BOARDSHELF_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("BOARDSHELF_KEY_ALIAS")
+                keyPassword = System.getenv("BOARDSHELF_KEY_PASSWORD")
             }
         }
     }

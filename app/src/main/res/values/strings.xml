@@ -24,9 +24,9 @@
     <string name="add_no_token">Without a BoardGameGeek token the search uses Wikidata and Wikipedia. Add your free BGG token in the settings for the full BGG database (ratings, box sizes, collection import).</string>
     <string name="add_search_label">Search title (BGG / Wikidata)</string>
     <string name="add_title">Add game</string>
-    <string name="app_name" translatable="false">Ludothek</string>
+    <string name="app_name" translatable="false">Boardshelf</string>
     <string name="backup_done">Backup saved.</string>
-    <string name="backup_restart">The backup was restored. Ludothek needs to restart now.</string>
+    <string name="backup_restart">The backup was restored. Boardshelf needs to restart now.</string>
     <string name="backup_restored">Backup restored</string>
     <string name="box_age">%1$d+</string>
     <string name="box_minutes">%1$d min</string>

@@ -25,7 +25,7 @@
     <string name="add_search_label">Titel suchen (BGG / Wikidata)</string>
     <string name="add_title">Spiel hinzufügen</string>
     <string name="backup_done">Sicherung gespeichert.</string>
-    <string name="backup_restart">Die Sicherung wurde wiederhergestellt. Ludothek muss jetzt neu starten.</string>
+    <string name="backup_restart">Die Sicherung wurde wiederhergestellt. Boardshelf muss jetzt neu starten.</string>
     <string name="backup_restored">Sicherung wiederhergestellt</string>
     <string name="box_age">ab %1$d</string>
     <string name="box_minutes">%1$d Min.</string>
