@@ -24,7 +24,7 @@
 - **Bewerten** – Gesamtnote (0,5er-Schritte bis 10), Spielspaß, Wiederspielwert, Material & Optik, Regelverständlichkeit und ein Fazit.
 - **Spielstände** – Spieltisch fotografieren (oder Foto aus der Galerie), Titel und Notiz dazu („Blau ist dran, 37 Punkte …“). Der neueste Stand ist markiert, Fotos lassen sich zoomen und teilen.
 - **Anleitungen** – PDF importieren, per Link laden, im eingebauten Browser suchen (BGG-Dateibereich, DuckDuckGo, Google, 1j1ju – jedes geöffnete PDF kann gespeichert werden) oder die gedruckte Anleitung **mit der Kamera scannen**. Alles offline lesbar, mit Zoom; Scans lassen sich als PDF teilen.
-- **Cover-Suche** – auch ohne BGG-Token: in Bildersuche, Amazon oder auf der BGG-Website lange auf das richtige Schachtelbild drücken und übernehmen. Automatisch wird nichts geraten; Wiki-Bilder werden nur genutzt, wenn sie eindeutig die Schachtel zeigen.
+- **Cover-Suche** – auch ohne BGG-Token: in Bildersuche, Amazon oder auf der BGG-Website lange auf das richtige Schachtelbild drücken und übernehmen. Danach lässt sich das Bild **zuschneiden** (Schachtelformat, quadratisch oder frei, drehbar), das geht auch bei Kamerafotos und vorhandenen Covern. Automatisch wird nichts geraten; Wiki-Bilder werden nur genutzt, wenn sie eindeutig die Schachtel zeigen.
 - **Eigenes Cover** fotografieren, Daten von Hand bearbeiten, Spiele ohne Online-Eintrag manuell anlegen.
 - **Datensicherung** als ZIP (Datenbank, Cover, Fotos, Anleitungen) und Wiederherstellung.
 - **Deutsch und Englisch**, umschaltbar in den Einstellungen (oder Systemsprache).
@@ -65,7 +65,7 @@ Boardshelf shows your board game collection as a shelf. Boxes stand with their s
 - **Ratings**: overall score plus fun, replayability, components and rules clarity, and a written review.
 - **Game states**: photograph the table to save a running game, with title and note.
 - **Rulebooks**: import PDFs, download by link, find them with the built-in browser (BGG files, web search) or **scan the printed rulebook** with the camera. Everything works offline.
-- **Cover search** without a BGG token: long-press the right box picture in image search, Amazon or on the BGG website.
+- **Cover search** without a BGG token: long-press the right box picture in image search, Amazon or on the BGG website, then **crop** it (box format, square or free).
 - Own cover photos, manual editing, ZIP backup and restore, demo collection.
 - UI in **English and German**, switchable in the settings.
 
