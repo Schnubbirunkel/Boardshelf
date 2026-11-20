@@ -40,6 +40,27 @@ for lang in de en; do
   shot "${lang}_5_savestates" 6 1 --es route "'game/1?tab=2'"
   shot "${lang}_6_manuals" 6 1 --es route "'game/1?tab=3'"
 done
+# record the take-out animation (animations enabled for this part)
+adb shell cmd locale set-app-locales "$PKG" --locales de || true
+adb shell settings put global window_animation_scale 1
+adb shell settings put global transition_animation_scale 1
+adb shell settings put global animator_duration_scale 1
+adb shell am force-stop "$PKG"
+adb shell "am start -W -n $PKG/$ACT --es lang de" > /dev/null
+sleep 6
+adb shell screenrecord --time-limit 6 --bit-rate 6000000 /sdcard/open.mp4 &
+REC=$!
+sleep 1.5
+adb shell input tap 100 560
+sleep 3
+adb shell input keyevent KEYCODE_BACK
+wait $REC || true
+sleep 1
+adb pull /sdcard/open.mp4 "$OUT/open.mp4"
+ffmpeg -y -loglevel error -i "$OUT/open.mp4" -vf "fps=20,scale=360:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer" "$OUT/open.gif" || true
+mkdir -p "$OUT/frames"
+ffmpeg -y -loglevel error -ss 1.3 -i "$OUT/open.mp4" -vf "fps=8,scale=270:-1" -frames:v 16 "$OUT/frames/f_%02d.png" || true
+rm -f "$OUT/open.mp4"
 rm -f "$OUT"/*_0_warmup.png
 adb logcat -d -v brief Boardshelf:V AndroidRuntime:E System.err:W "*:S" > "$OUT/logcat.txt" || true
 ls -la "$OUT"
