@@ -23,6 +23,7 @@ import androidx.navigation.navArgument
 import io.github.schnubbirunkel.boardshelf.demo.DemoData
 import io.github.schnubbirunkel.boardshelf.ui.add.AddGameScreen
 import io.github.schnubbirunkel.boardshelf.ui.detail.GameDetailScreen
+import io.github.schnubbirunkel.boardshelf.ui.manuals.CoverSearchScreen
 import io.github.schnubbirunkel.boardshelf.ui.manuals.ManualBrowserScreen
 import io.github.schnubbirunkel.boardshelf.ui.manuals.ManualViewerScreen
 import io.github.schnubbirunkel.boardshelf.ui.manuals.PhotoViewerScreen
@@ -81,6 +82,7 @@ class MainActivity : AppCompatActivity() {
                             onOpenPhoto = { nav.navigate("photo/$it") },
                             onBrowseManuals = { nav.navigate("browser/$it") },
                             onScanManual = { nav.navigate("scan/$it") },
+                            onSearchCover = { nav.navigate("cover/$it") },
                         )
                     }
                     composable("add") {
@@ -100,6 +102,9 @@ class MainActivity : AppCompatActivity() {
                     }
                     composable("browser/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
                         ManualBrowserScreen(it.arguments?.getLong("id") ?: 0L, onBack = { nav.popBackStack() })
+                    }
+                    composable("cover/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
+                        CoverSearchScreen(it.arguments?.getLong("id") ?: 0L, onDone = { nav.popBackStack() })
                     }
                     composable("scan/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
                         ScanManualScreen(it.arguments?.getLong("id") ?: 0L, onDone = { nav.popBackStack() })

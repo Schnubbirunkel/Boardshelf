@@ -58,10 +58,21 @@ import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun InfoTab(g: Game, vm: GameDetailViewModel) {
+fun InfoTab(g: Game, vm: GameDetailViewModel, onSearchCover: () -> Unit, onCoverPhoto: () -> Unit) {
     val context = LocalContext.current
     val shelves by vm.shelves.collectAsState()
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (g.coverPath == null) {
+            ElevatedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.cover_missing), style = MaterialTheme.typography.bodyMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onSearchCover) { Text(stringResource(R.string.action_cover_web)) }
+                        OutlinedButton(onClick = onCoverPhoto) { Text(stringResource(R.string.action_cover_photo)) }
+                    }
+                }
+            }
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             g.playersText?.let { InfoChip(Icons.Default.Groups, stringResource(R.string.box_players, it)) }
             g.playingTime?.let { InfoChip(Icons.Default.Schedule, stringResource(R.string.box_minutes, it)) }

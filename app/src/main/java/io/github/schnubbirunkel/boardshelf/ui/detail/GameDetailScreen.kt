@@ -71,6 +71,7 @@ fun GameDetailScreen(
     onOpenPhoto: (Long) -> Unit,
     onBrowseManuals: (Long) -> Unit,
     onScanManual: (Long) -> Unit,
+    onSearchCover: (Long) -> Unit = {},
 ) {
     val vm = appViewModel(key = "game$gameId") { GameDetailViewModel(it, gameId) }
     val game by vm.game.collectAsStateWithLifecycle()
@@ -116,6 +117,7 @@ fun GameDetailScreen(
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_edit)) }, onClick = { menu = false; editing = true })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_web)) }, onClick = { menu = false; onSearchCover(gameId) })
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_photo)) }, onClick = { menu = false; coverCamera() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_gallery)) }, onClick = { menu = false; coverPicker() })
                             if (game?.bggId != null || game?.wikidataId != null) {
@@ -161,7 +163,7 @@ fun GameDetailScreen(
             }
             Box(Modifier.padding(16.dp)) {
                 when (tab) {
-                    0 -> InfoTab(g, vm)
+                    0 -> InfoTab(g, vm, onSearchCover = { onSearchCover(g.id) }, onCoverPhoto = coverCamera)
                     1 -> RatingTab(g, vm)
                     2 -> SaveStatesTab(vm, onOpenPhoto)
                     else -> ManualsTab(g, vm, onOpenManual, onBrowse = { onBrowseManuals(g.id) }, onScan = { onScanManual(g.id) })

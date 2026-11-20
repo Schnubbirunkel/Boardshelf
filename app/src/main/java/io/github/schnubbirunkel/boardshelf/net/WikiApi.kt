@@ -51,7 +51,7 @@ class WikiApi(private val http: OkHttpClient) {
                 id = id,
                 name = text(e, "labels") ?: return@mapNotNull null,
                 year = year(e),
-                thumbnail = claimString(e, "P18")?.let { commonsUrl(it, 160) },
+                thumbnail = claimString(e, "P18")?.takeIf { looksLikeBox(it) }?.let { commonsUrl(it, 160) },
                 subtitle = desc,
                 bggId = claimString(e, "P2339")?.toIntOrNull(),
             )
@@ -82,7 +82,8 @@ class WikiApi(private val http: OkHttpClient) {
             playingTime = minutes,
             minAge = quantity(e, "P2899")?.first?.toInt(),
             description = summary?.first ?: text(e, "descriptions"),
-            imageUrl = claimString(e, "P18")?.let { commonsUrl(it, 800) } ?: summary?.third,
+            imageUrl = claimString(e, "P18")?.takeIf { looksLikeBox(it) }?.let { commonsUrl(it, 800) }
+                ?: summary?.third?.takeIf { looksLikeBox(it.substringAfterLast('/')) },
             designers = personIds.distinct().mapNotNull { labels[it] },
             publishers = publisherIds.distinct().mapNotNull { labels[it] },
             bggId = claimString(e, "P2339")?.toIntOrNull(),
@@ -154,6 +155,18 @@ class WikiApi(private val http: OkHttpClient) {
     private fun year(e: JSONObject): Int? {
         val v = datavalue(e, "P577").firstOrNull() as? JSONObject ?: return null
         return v.optString("time").removePrefix("+").take(4).toIntOrNull()
+    }
+
+    /**
+     * Wikimedia images of games are mostly photos of a game in progress (e.g. "Nemesis" shows a
+     * table). Only file names that clearly describe the box are accepted as cover.
+     */
+    private fun looksLikeBox(fileName: String): Boolean {
+        val n = java.net.URLDecoder.decode(fileName, "UTF-8").lowercase()
+        val yes = listOf("box", "cover", "schachtel", "verpackung", "packaging", "packshot", "boîte", "boite", "caja", "scatola", "doos")
+        val no = listOf("table", "tisch", "gameplay", "in progress", "partie", "spielsituation", "setup", "aufbau",
+            "components", "material", "board_", "spielbrett", "playing", "players", "spieler", "game_in", "convention", "messe")
+        return yes.any { it in n } && no.none { it in n }
     }
 
     private fun commonsUrl(fileName: String, width: Int) =

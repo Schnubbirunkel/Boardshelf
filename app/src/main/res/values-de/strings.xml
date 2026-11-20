@@ -7,6 +7,7 @@
     <string name="action_close">Schließen</string>
     <string name="action_cover_gallery">Cover aus Galerie</string>
     <string name="action_cover_photo">Cover fotografieren</string>
+    <string name="action_cover_web">Cover im Web suchen</string>
     <string name="action_delete">Löschen</string>
     <string name="action_download">Herunterladen</string>
     <string name="action_edit">Bearbeiten</string>
@@ -34,6 +35,15 @@
     <string name="browser_hint">Öffne oder lade ein PDF herunter, um es als Anleitung zu speichern.</string>
     <string name="browser_save_title">Als Anleitung speichern?</string>
     <string name="browser_title">Anleitung suchen</string>
+    <string name="cover_amazon_term">Brettspiel</string>
+    <string name="cover_missing">Noch kein Cover. Such dir das passende Schachtelbild im Web aus oder fotografiere deine eigene Schachtel.</string>
+    <string name="cover_search_hint">Lange auf das gewünschte Schachtelbild drücken. Tipp: Treffer erst öffnen, dann bekommst du die große Version.</string>
+    <string name="cover_search_term">Brettspiel Schachtel</string>
+    <string name="cover_search_title">Cover auswählen</string>
+    <string name="cover_source_images">Bildersuche</string>
+    <string name="cover_use_confirm">Als Cover verwenden</string>
+    <string name="cover_use_hint">Nur übernehmen, wenn es die Vorderseite der Schachtel zeigt.</string>
+    <string name="cover_use_title">Dieses Bild als Cover verwenden?</string>
     <string name="delete_game_text">„%1$s“ samt allen Fotos und Anleitungen aus dem Regal entfernen?</string>
     <string name="delete_game_title">Spiel löschen?</string>
     <string name="demo_description">Dies ist ein ausgedachtes Demo-Spiel mit generiertem Cover. Probier damit das Regal aus: Lange auf eine Schachtel drücken, um sie umzustellen, antippen für die 3D-Ansicht.</string>
@@ -42,6 +52,7 @@
     <string name="detail_drag_hint">Ziehen zum Drehen · Doppeltippen zum Zurücksetzen</string>
     <string name="err_bgg_auth">BoardGameGeek hat den Token abgelehnt. Bitte in den Einstellungen prüfen.</string>
     <string name="err_bgg_token_missing">Kein BoardGameGeek-Token eingetragen (siehe Einstellungen).</string>
+    <string name="err_cover_small">Das Bild hat nur %1$d × %2$d Pixel. Öffne den Treffer und drücke lange auf die große Version.</string>
     <string name="err_generic">Etwas ist schiefgegangen.</string>
     <string name="err_http">Der Server hat mit Fehler %1$d geantwortet.</string>
     <string name="err_no_camera">Keine Kamera-App gefunden.</string>

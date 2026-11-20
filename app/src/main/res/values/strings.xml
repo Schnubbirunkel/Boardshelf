@@ -7,6 +7,7 @@
     <string name="action_close">Close</string>
     <string name="action_cover_gallery">Cover from gallery</string>
     <string name="action_cover_photo">Photograph cover</string>
+    <string name="action_cover_web">Find cover on the web</string>
     <string name="action_delete">Delete</string>
     <string name="action_download">Download</string>
     <string name="action_edit">Edit</string>
@@ -35,6 +36,15 @@
     <string name="browser_hint">Open or download a PDF to store it as rulebook.</string>
     <string name="browser_save_title">Save as rulebook?</string>
     <string name="browser_title">Find rulebook</string>
+    <string name="cover_amazon_term">board game</string>
+    <string name="cover_missing">No cover yet. Pick the right box picture on the web or photograph your own box.</string>
+    <string name="cover_search_hint">Long-press the box picture you want. Tip: open a result first to get the large version.</string>
+    <string name="cover_search_term">board game box</string>
+    <string name="cover_search_title">Choose cover</string>
+    <string name="cover_source_images">Image search</string>
+    <string name="cover_use_confirm">Use as cover</string>
+    <string name="cover_use_hint">Only use it if it shows the front of the box.</string>
+    <string name="cover_use_title">Use this picture as cover?</string>
     <string name="delete_game_text">Remove “%1$s” including all photos and rulebooks from the shelf?</string>
     <string name="delete_game_title">Delete game?</string>
     <string name="demo_description">This is a fictional demo game with generated cover art. Use it to try out the shelf: long-press a box to move it to another place or board, tap it to see it in 3D.</string>
@@ -43,6 +53,7 @@
     <string name="detail_drag_hint">Drag to rotate · double tap to reset</string>
     <string name="err_bgg_auth">BoardGameGeek rejected the token. Please check it in the settings.</string>
     <string name="err_bgg_token_missing">No BoardGameGeek token set (see settings).</string>
+    <string name="err_cover_small">The picture is only %1$d × %2$d pixels. Open the result and long-press the large version.</string>
     <string name="err_generic">Something went wrong.</string>
     <string name="err_http">Server answered with error %1$d.</string>
     <string name="err_no_camera">No camera app found.</string>

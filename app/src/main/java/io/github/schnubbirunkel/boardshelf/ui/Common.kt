@@ -34,6 +34,7 @@ fun Context.openUrl(url: String) {
 }
 
 fun Context.errorText(t: Throwable): String = when (t) {
+    is io.github.schnubbirunkel.boardshelf.data.CoverTooSmallException -> getString(R.string.err_cover_small, t.w, t.h)
     is BggTokenMissingException -> getString(R.string.err_bgg_token_missing)
     is BggAuthException -> getString(R.string.err_bgg_auth)
     is UnknownHostException -> getString(R.string.err_offline)

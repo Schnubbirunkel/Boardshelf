@@ -210,6 +210,30 @@ class Repository(
         }
     }
 
+    /**
+     * Uses an image picked in the cover search as cover. Supports http(s) and data: URLs.
+     * Rejects tiny images (thumbnails, icons) so only a real cover is used.
+     */
+    suspend fun setCoverFromUrl(gameId: Long, url: String, headers: Map<String, String>) = withContext(Dispatchers.IO) {
+        val tmp = File(context.cacheDir, "cover_${UUID.randomUUID()}")
+        try {
+            if (url.startsWith("data:")) {
+                val b64 = url.substringAfter("base64,", "")
+                if (b64.isEmpty()) throw IOException("Unsupported image")
+                tmp.writeBytes(android.util.Base64.decode(b64, android.util.Base64.DEFAULT))
+            } else {
+                http.download(url, tmp, headers)
+            }
+            val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            android.graphics.BitmapFactory.decodeFile(tmp.path, o)
+            if (o.outWidth <= 0 || o.outHeight <= 0) throw IOException("Not an image")
+            if (minOf(o.outWidth, o.outHeight) < MIN_COVER_PX) throw CoverTooSmallException(o.outWidth, o.outHeight)
+            setCoverFromFile(gameId, tmp)
+        } finally {
+            tmp.delete()
+        }
+    }
+
     /** Uses an own photo (camera or gallery) as cover. */
     suspend fun setCoverFromFile(gameId: Long, source: File) = withContext(Dispatchers.IO) {
         val f = files.newFile("covers", "jpg")
@@ -402,4 +426,10 @@ class Repository(
         }
         staging.deleteRecursively()
     }
+
+    companion object {
+        const val MIN_COVER_PX = 150
+    }
 }
+
+class CoverTooSmallException(val w: Int, val h: Int) : IOException("Image too small: ${w}x$h")
