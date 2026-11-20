@@ -103,6 +103,8 @@ class ShelfViewModel(private val repo: Repository) : ViewModel() {
         viewModelScope.launch { repo.ensureShelves() }
     }
 
+    fun handover(g: Game) { repo.handover[g.id] = g }
+
     fun applyOrder(order: Map<Long, List<Long>>) {
         viewModelScope.launch { repo.applyOrder(order) }
     }
@@ -182,7 +184,7 @@ fun ShelfScreen(
             ShelfWall(
                 shelves = st.shelves, games = st.games, spineMode = true, query = query,
                 hiddenId = opening?.game?.id,
-                onOpen = { id, rect -> if (opening == null) st.games.firstOrNull { it.id == id }?.let { opening = Opening(it, rect) } },
+                onOpen = { id, rect -> if (opening == null) st.games.firstOrNull { it.id == id }?.let { vm.handover(it); opening = Opening(it, rect) } },
                 onOrder = vm::applyOrder, padding = padding
             )
             if (st.games.isEmpty()) {

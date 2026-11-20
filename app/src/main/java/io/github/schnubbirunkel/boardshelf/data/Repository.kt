@@ -35,6 +35,9 @@ class Repository(
     val settings: SettingsStore,
 ) {
     val games: Flow<List<Game>> = db.games().observeAll()
+
+    /** Games handed over between screens so the detail view can draw instantly. */
+    val handover = java.util.concurrent.ConcurrentHashMap<Long, Game>()
     val shelves: Flow<List<Shelf>> = db.shelves().observeAll()
     fun game(id: Long): Flow<Game?> = db.games().observe(id)
     fun saveStates(gameId: Long): Flow<List<SaveState>> = db.saveStates().observeForGame(gameId)

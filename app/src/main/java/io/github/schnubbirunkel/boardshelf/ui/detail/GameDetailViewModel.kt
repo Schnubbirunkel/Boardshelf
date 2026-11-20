@@ -23,7 +23,7 @@ sealed interface DetailEvent {
 }
 
 class GameDetailViewModel(val repo: Repository, val gameId: Long) : ViewModel() {
-    val game = repo.game(gameId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val game = repo.game(gameId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), repo.handover.remove(gameId))
     val saveStates = repo.saveStates(gameId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val manuals = repo.manuals(gameId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val shelves = repo.shelves.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

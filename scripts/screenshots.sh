@@ -48,12 +48,10 @@ adb shell settings put global animator_duration_scale 1
 adb shell am force-stop "$PKG"
 adb shell "am start -W -n $PKG/$ACT --es lang de" > /dev/null
 sleep 6
-adb shell screenrecord --time-limit 6 --bit-rate 6000000 /sdcard/open.mp4 &
+adb shell screenrecord --time-limit 5 --bit-rate 6000000 /sdcard/open.mp4 &
 REC=$!
 sleep 1.5
 adb shell input tap 100 560
-sleep 3
-adb shell input keyevent KEYCODE_BACK
 wait $REC || true
 sleep 1
 adb pull /sdcard/open.mp4 "$OUT/open.mp4"
