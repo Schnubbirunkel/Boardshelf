@@ -57,10 +57,6 @@ adb shell input keyevent KEYCODE_BACK
 wait $REC || true
 sleep 1
 adb pull /sdcard/open.mp4 "$OUT/open.mp4"
-ffmpeg -y -loglevel error -i "$OUT/open.mp4" -vf "fps=20,scale=360:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer" "$OUT/open.gif" || true
-mkdir -p "$OUT/frames"
-ffmpeg -y -loglevel error -ss 1.3 -i "$OUT/open.mp4" -vf "fps=8,scale=270:-1" -frames:v 16 "$OUT/frames/f_%02d.png" || true
-rm -f "$OUT/open.mp4"
 rm -f "$OUT"/*_0_warmup.png
 adb logcat -d -v brief Boardshelf:V AndroidRuntime:E System.err:W "*:S" > "$OUT/logcat.txt" || true
 ls -la "$OUT"
