@@ -39,6 +39,7 @@ for lang in de en; do
   shot "${lang}_4_rating" 6 1 --es route "'game/7?tab=1'"
   shot "${lang}_5_savestates" 6 1 --es route "'game/1?tab=2'"
   shot "${lang}_6_manuals" 6 1 --es route "'game/1?tab=3'"
+  shot "${lang}_7_crop" 6 0 --el crop_game 2
 done
 # record the take-out animation (animations enabled for this part)
 adb shell cmd locale set-app-locales "$PKG" --locales de || true

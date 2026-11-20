@@ -154,7 +154,13 @@ class MainActivity : AppCompatActivity() {
             } catch (t: Throwable) {
                 Log.e("Boardshelf", "Demo seeding failed", t)
             }
-            if (route != null) pendingRoute = route
+            val cropGame = intent.getLongExtra("crop_game", -1L)
+            if (cropGame > 0) {
+                repo.db.games().get(cropGame)?.coverPath?.let { rel ->
+                    val f = repo.coverCandidateFrom(repo.files.resolve(rel), null)
+                    pendingRoute = "crop/$cropGame?path=${Uri.encode(f.path)}"
+                }
+            } else if (route != null) pendingRoute = route
         }
     }
 }
