@@ -211,11 +211,11 @@ class Repository(
     }
 
     /**
-     * Uses an image picked in the cover search as cover. Supports http(s) and data: URLs.
-     * Rejects tiny images (thumbnails, icons) so only a real cover is used.
+     * Downloads an image picked in the cover search into the cache (for cropping).
+     * Supports http(s) and data: URLs and rejects tiny images (thumbnails, icons).
      */
-    suspend fun setCoverFromUrl(gameId: Long, url: String, headers: Map<String, String>) = withContext(Dispatchers.IO) {
-        val tmp = File(context.cacheDir, "cover_${UUID.randomUUID()}")
+    suspend fun downloadCoverCandidate(url: String, headers: Map<String, String>): File = withContext(Dispatchers.IO) {
+        val tmp = newCoverCandidate()
         try {
             if (url.startsWith("data:")) {
                 val b64 = url.substringAfter("base64,", "")
@@ -228,10 +228,25 @@ class Repository(
             android.graphics.BitmapFactory.decodeFile(tmp.path, o)
             if (o.outWidth <= 0 || o.outHeight <= 0) throw IOException("Not an image")
             if (minOf(o.outWidth, o.outHeight) < MIN_COVER_PX) throw CoverTooSmallException(o.outWidth, o.outHeight)
-            setCoverFromFile(gameId, tmp)
-        } finally {
-            tmp.delete()
+            tmp
+        } catch (e: Exception) {
+            tmp.delete(); throw e
         }
+    }
+
+    /** A fresh temp file for a cover that still has to be cropped. */
+    fun newCoverCandidate(): File =
+        File(File(context.cacheDir, "cover_candidates").apply { mkdirs() }, "${UUID.randomUUID()}.jpg")
+
+    /** Copies the current cover (or a gallery image) into a temp file for cropping. */
+    suspend fun coverCandidateFrom(source: File?, uri: Uri?): File = withContext(Dispatchers.IO) {
+        val tmp = newCoverCandidate()
+        when {
+            uri != null -> files.copyUriTo(uri, tmp)
+            source != null -> source.copyTo(tmp, overwrite = true)
+            else -> throw IOException("No image")
+        }
+        tmp
     }
 
     /** Uses an own photo (camera or gallery) as cover. */

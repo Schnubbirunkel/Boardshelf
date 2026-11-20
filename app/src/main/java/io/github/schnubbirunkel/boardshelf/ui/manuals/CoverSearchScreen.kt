@@ -67,7 +67,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun CoverSearchScreen(gameId: Long, onDone: () -> Unit) {
+fun CoverSearchScreen(gameId: Long, onDone: () -> Unit, onPicked: (String) -> Unit) {
     val context = LocalContext.current
     val repo = context.app().repository
     val game by produceState<Game?>(null, gameId) { value = repo.game(gameId).first() }
@@ -206,8 +206,8 @@ fun CoverSearchScreen(gameId: Long, onDone: () -> Unit) {
                                 webView?.settings?.userAgentString?.let { put("User-Agent", it) }
                                 webView?.url?.let { put("Referer", it) }
                             }
-                            repo.setCoverFromUrl(gameId, url, headers)
-                            onDone()
+                            val file = repo.downloadCoverCandidate(url, headers)
+                            onPicked(file.path)
                         } catch (e: Exception) {
                             snackbar.showSnackbar(context.errorText(e))
                         } finally {

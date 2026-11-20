@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -47,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import io.github.schnubbirunkel.boardshelf.R
 import io.github.schnubbirunkel.boardshelf.ui.app
 import io.github.schnubbirunkel.boardshelf.ui.appViewModel
@@ -72,6 +74,7 @@ fun GameDetailScreen(
     onBrowseManuals: (Long) -> Unit,
     onScanManual: (Long) -> Unit,
     onSearchCover: (Long) -> Unit = {},
+    onCropCover: (String) -> Unit = {},
 ) {
     val vm = appViewModel(key = "game$gameId") { GameDetailViewModel(it, gameId) }
     val game by vm.game.collectAsStateWithLifecycle()
@@ -99,8 +102,12 @@ fun GameDetailScreen(
         }
     }
 
-    val coverCamera = rememberCamera { vm.setCover(it) }
-    val coverPicker = rememberImagePicker { vm.setCoverUri(it) }
+    val scope = rememberCoroutineScope()
+    val repo = context.app().repository
+    val coverCamera = rememberCamera { onCropCover(it.path) }
+    val coverPicker = rememberImagePicker { uri ->
+        scope.launch { runCatching { repo.coverCandidateFrom(null, uri) }.onSuccess { onCropCover(it.path) } }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -118,6 +125,15 @@ fun GameDetailScreen(
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_edit)) }, onClick = { menu = false; editing = true })
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_web)) }, onClick = { menu = false; onSearchCover(gameId) })
+                            if (game?.coverPath != null) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_crop)) }, onClick = {
+                                    menu = false
+                                    scope.launch {
+                                        runCatching { repo.coverCandidateFrom(repo.files.resolve(game?.coverPath), null) }
+                                            .onSuccess { onCropCover(it.path) }
+                                    }
+                                })
+                            }
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_photo)) }, onClick = { menu = false; coverCamera() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_gallery)) }, onClick = { menu = false; coverPicker() })
                             if (game?.bggId != null || game?.wikidataId != null) {

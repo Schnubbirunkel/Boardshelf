@@ -1,5 +1,6 @@
 package io.github.schnubbirunkel.boardshelf
 
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
@@ -24,6 +25,7 @@ import io.github.schnubbirunkel.boardshelf.demo.DemoData
 import io.github.schnubbirunkel.boardshelf.ui.add.AddGameScreen
 import io.github.schnubbirunkel.boardshelf.ui.detail.GameDetailScreen
 import io.github.schnubbirunkel.boardshelf.ui.manuals.CoverSearchScreen
+import io.github.schnubbirunkel.boardshelf.ui.manuals.CropScreen
 import io.github.schnubbirunkel.boardshelf.ui.manuals.ManualBrowserScreen
 import io.github.schnubbirunkel.boardshelf.ui.manuals.ManualViewerScreen
 import io.github.schnubbirunkel.boardshelf.ui.manuals.PhotoViewerScreen
@@ -83,6 +85,7 @@ class MainActivity : AppCompatActivity() {
                             onBrowseManuals = { nav.navigate("browser/$it") },
                             onScanManual = { nav.navigate("scan/$it") },
                             onSearchCover = { nav.navigate("cover/$it") },
+                            onCropCover = { path -> nav.navigate("crop/$id?path=${Uri.encode(path)}") },
                         )
                     }
                     composable("add") {
@@ -104,7 +107,19 @@ class MainActivity : AppCompatActivity() {
                         ManualBrowserScreen(it.arguments?.getLong("id") ?: 0L, onBack = { nav.popBackStack() })
                     }
                     composable("cover/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
-                        CoverSearchScreen(it.arguments?.getLong("id") ?: 0L, onDone = { nav.popBackStack() })
+                        val gid = it.arguments?.getLong("id") ?: 0L
+                        CoverSearchScreen(gid, onDone = { nav.popBackStack() }, onPicked = { path ->
+                            nav.navigate("crop/$gid?path=${Uri.encode(path)}") { popUpTo("cover/{id}") { inclusive = true } }
+                        })
+                    }
+                    composable(
+                        "crop/{id}?path={path}",
+                        arguments = listOf(
+                            navArgument("id") { type = NavType.LongType },
+                            navArgument("path") { type = NavType.StringType; defaultValue = "" },
+                        )
+                    ) {
+                        CropScreen(it.arguments?.getLong("id") ?: 0L, it.arguments?.getString("path") ?: "", onDone = { nav.popBackStack() })
                     }
                     composable("scan/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
                         ScanManualScreen(it.arguments?.getLong("id") ?: 0L, onDone = { nav.popBackStack() })

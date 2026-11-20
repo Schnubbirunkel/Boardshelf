@@ -5,6 +5,7 @@
     <string name="action_back">Zurück</string>
     <string name="action_cancel">Abbrechen</string>
     <string name="action_close">Schließen</string>
+    <string name="action_cover_crop">Cover zuschneiden</string>
     <string name="action_cover_gallery">Cover aus Galerie</string>
     <string name="action_cover_photo">Cover fotografieren</string>
     <string name="action_cover_web">Cover im Web suchen</string>
@@ -44,6 +45,13 @@
     <string name="cover_use_confirm">Als Cover verwenden</string>
     <string name="cover_use_hint">Nur übernehmen, wenn es die Vorderseite der Schachtel zeigt.</string>
     <string name="cover_use_title">Dieses Bild als Cover verwenden?</string>
+    <string name="crop_apply">Als Cover übernehmen</string>
+    <string name="crop_box">Schachtelformat</string>
+    <string name="crop_free">Frei</string>
+    <string name="crop_hint">Ecken auf die Vorderseite der Schachtel ziehen, innen ziehen verschiebt den Rahmen.</string>
+    <string name="crop_rotate">Drehen</string>
+    <string name="crop_square">Quadratisch</string>
+    <string name="crop_title">Cover zuschneiden</string>
     <string name="delete_game_text">„%1$s“ samt allen Fotos und Anleitungen aus dem Regal entfernen?</string>
     <string name="delete_game_title">Spiel löschen?</string>
     <string name="demo_description">Dies ist ein ausgedachtes Demo-Spiel mit generiertem Cover. Probier damit das Regal aus: Lange auf eine Schachtel drücken, um sie umzustellen, antippen für die 3D-Ansicht.</string>

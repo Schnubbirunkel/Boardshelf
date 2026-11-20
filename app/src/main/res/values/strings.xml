@@ -5,6 +5,7 @@
     <string name="action_back">Back</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
+    <string name="action_cover_crop">Crop cover</string>
     <string name="action_cover_gallery">Cover from gallery</string>
     <string name="action_cover_photo">Photograph cover</string>
     <string name="action_cover_web">Find cover on the web</string>
@@ -45,6 +46,13 @@
     <string name="cover_use_confirm">Use as cover</string>
     <string name="cover_use_hint">Only use it if it shows the front of the box.</string>
     <string name="cover_use_title">Use this picture as cover?</string>
+    <string name="crop_apply">Use as cover</string>
+    <string name="crop_box">Box format</string>
+    <string name="crop_free">Free</string>
+    <string name="crop_hint">Drag the corners to fit the front of the box, drag inside to move the frame.</string>
+    <string name="crop_rotate">Rotate</string>
+    <string name="crop_square">Square</string>
+    <string name="crop_title">Crop cover</string>
     <string name="delete_game_text">Remove “%1$s” including all photos and rulebooks from the shelf?</string>
     <string name="delete_game_title">Delete game?</string>
     <string name="demo_description">This is a fictional demo game with generated cover art. Use it to try out the shelf: long-press a box to move it to another place or board, tap it to see it in 3D.</string>
