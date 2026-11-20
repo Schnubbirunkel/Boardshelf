@@ -31,7 +31,8 @@ shot() {
 }
 
 for lang in de en; do
-  adb shell cmd locale set-app-locales "$PKG" --locales "$lang"
+  adb shell cmd locale set-app-locales "$PKG" --locales "$lang" || true
+  shot "${lang}_0_warmup" 8 0 --es lang "$lang"
   shot "${lang}_1_shelf" 20 0 --ez seed_demo true --ez spine false
   shot "${lang}_2_spines" 6 0 --ez spine true
   shot "${lang}_3_box3d" 6 0 --ez spine false --es route "'game/1'"
@@ -39,4 +40,6 @@ for lang in de en; do
   shot "${lang}_5_savestates" 6 1 --es route "'game/1?tab=2'"
   shot "${lang}_6_manuals" 6 1 --es route "'game/1?tab=3'"
 done
+rm -f "$OUT"/*_0_warmup.png
+adb logcat -d -v brief Boardshelf:V AndroidRuntime:E System.err:W "*:S" > "$OUT/logcat.txt" || true
 ls -la "$OUT"

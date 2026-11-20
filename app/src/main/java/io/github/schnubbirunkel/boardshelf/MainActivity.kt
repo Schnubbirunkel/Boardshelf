@@ -1,6 +1,9 @@
 package io.github.schnubbirunkel.boardshelf
 
 import android.os.Bundle
+import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -108,8 +111,18 @@ class MainActivity : AppCompatActivity() {
             val spine = intent.getBooleanExtra("spine", false)
             repo.settings.update { it.copy(spineMode = spine) }
         }
+        intent.getStringExtra("lang")?.let { tag ->
+            val wanted = LocaleListCompat.forLanguageTags(tag)
+            if (AppCompatDelegate.getApplicationLocales().toLanguageTags() != wanted.toLanguageTags()) {
+                AppCompatDelegate.setApplicationLocales(wanted)
+            }
+        }
         lifecycleScope.launch {
-            if (seed && repo.db.games().count() == 0) DemoData.seed(this@MainActivity, repo)
+            try {
+                if (seed && repo.db.games().count() == 0) DemoData.seed(this@MainActivity, repo)
+            } catch (t: Throwable) {
+                Log.e("Boardshelf", "Demo seeding failed", t)
+            }
             if (route != null) pendingRoute = route
         }
     }
