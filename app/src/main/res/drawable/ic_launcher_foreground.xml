@@ -5,10 +5,10 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <!-- shelf frame -->
-    <path android:fillColor="#FFF4F6F8" android:pathData="M26,28h56v54h-56z" />
-    <path android:fillColor="#FF2B323B" android:pathData="M30,32h48v20h-48z M30,56h48v22h-48z" />
+    <path android:fillColor="#FF3D434B" android:pathData="M26,28h56v54h-56z" />
+    <path android:fillColor="#FF101316" android:pathData="M30,32h48v20h-48z M30,56h48v22h-48z" />
     <!-- boards -->
-    <path android:fillColor="#FFDDE2E7" android:pathData="M26,52h56v4h-56z M26,78h56v4h-56z" />
+    <path android:fillColor="#FF5A626C" android:pathData="M26,52h56v4h-56z M26,78h56v4h-56z" />
     <!-- boxes upper -->
     <path android:fillColor="#FFE4572E" android:pathData="M33,36h14v16h-14z" />
     <path android:fillColor="#FF29A19C" android:pathData="M49,40h6v12h-6z" />

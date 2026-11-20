@@ -398,7 +398,7 @@ private fun DrawScope.drawShelf(layout: ShelfLayout, d: ShelfDims) {
     layout.shelves.forEach { sp ->
         drawRect(
             Brush.verticalGradient(
-                0f to Color(0xFF7E8790), 0.22f to Deco.back, 1f to Color(0xFFCDD3D9),
+                0f to Color(0xFF07080A), 0.25f to Deco.back, 1f to Color(0xFF22272D),
                 startY = sp.top, endY = sp.boardTop
             ),
             topLeft = Offset(d.side, sp.top), size = Size(w - 2 * d.side, sp.height)
@@ -406,7 +406,7 @@ private fun DrawScope.drawShelf(layout: ShelfLayout, d: ShelfDims) {
         // subtle vertical plank seams of the back panel
         var x = d.side + 90f
         while (x < w - d.side) {
-            drawLine(Color(0x14000000), Offset(x, sp.top), Offset(x, sp.boardTop), strokeWidth = 2f)
+            drawLine(Color(0x0CFFFFFF), Offset(x, sp.top), Offset(x, sp.boardTop), strokeWidth = 2f)
             x += 180f
         }
     }
@@ -419,14 +419,14 @@ private fun DrawScope.drawShelf(layout: ShelfLayout, d: ShelfDims) {
             Brush.verticalGradient(listOf(Deco.plankLight, Deco.plank, Deco.plankDark), startY = sp.boardTop, endY = sp.boardTop + d.board),
             topLeft = Offset(0f, sp.boardTop), size = Size(w, d.board)
         )
-        drawLine(Color(0xFFFFFFFF), Offset(0f, sp.boardTop + 1f), Offset(w, sp.boardTop + 1f), strokeWidth = 2f)
+        drawLine(Color(0x40FFFFFF), Offset(0f, sp.boardTop + 1f), Offset(w, sp.boardTop + 1f), strokeWidth = 2f)
         for (k in 1..3) {
             val gy = sp.boardTop + d.board * k / 4f
             drawLine(Deco.grain, Offset(0f, gy), Offset(w, gy + (k - 2) * 3f), strokeWidth = 1.5f)
         }
         // shadow that the board casts onto the compartment below
         drawRect(
-            Brush.verticalGradient(listOf(Color(0x55000000), Color.Transparent), startY = sp.boardTop + d.board, endY = sp.boardTop + d.board + 40f),
+            Brush.verticalGradient(listOf(Color(0xAA000000), Color.Transparent), startY = sp.boardTop + d.board, endY = sp.boardTop + d.board + 40f),
             topLeft = Offset(d.side, sp.boardTop + d.board), size = Size(w - 2 * d.side, 40f)
         )
     }

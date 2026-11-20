@@ -13,14 +13,14 @@ import androidx.compose.ui.unit.sp
 object Deco {
     val wall = Color(0xFF14181D)
     val wallLight = Color(0xFF1C2127)
-    val back = Color(0xFFB9C0C8)
-    val plank = Color(0xFFE9ECEF)
-    val plankLight = Color(0xFFFFFFFF)
-    val plankDark = Color(0xFFC3C9D0)
-    val grain = Color(0x10000000)
+    val back = Color(0xFF15181C)
+    val plank = Color(0xFF2B3036)
+    val plankLight = Color(0xFF3D434B)
+    val plankDark = Color(0xFF1B1F23)
+    val grain = Color(0x14FFFFFF)
     val brass = Color(0xFFFFC845)
     val accent = Color(0xFF5ED3B8)
-    val label = Color(0xFF2B323B)
+    val label = Color(0xFF454D57)
 }
 
 private val scheme = darkColorScheme(
