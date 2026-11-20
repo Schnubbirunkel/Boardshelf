@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- shelf frame -->
+    <path android:fillColor="#FFD9A066" android:pathData="M26,28h56v54h-56z" />
+    <path android:fillColor="#FF3A2417" android:pathData="M30,32h48v20h-48z M30,56h48v22h-48z" />
+    <!-- boards -->
+    <path android:fillColor="#FFB07A45" android:pathData="M26,52h56v4h-56z M26,78h56v4h-56z" />
+    <!-- boxes upper -->
+    <path android:fillColor="#FFE4572E" android:pathData="M33,36h14v16h-14z" />
+    <path android:fillColor="#FF29A19C" android:pathData="M49,40h6v12h-6z" />
+    <path android:fillColor="#FFF3C969" android:pathData="M57,38h7v14h-7z" />
+    <path android:fillColor="#FF5B5F97" android:pathData="M66,42h9v10h-9z" />
+    <!-- boxes lower -->
+    <path android:fillColor="#FF7BB661" android:pathData="M33,62h18v16h-18z" />
+    <path android:fillColor="#FFF3C969" android:pathData="M53,60h5v18h-5z" />
+    <path android:fillColor="#FFE4572E" android:pathData="M60,64h15v14h-15z" />
+    <!-- meeple -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M40,66a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0z M38.5,70h8l-1,2l2,5h-3l-1.5,-3l-1.5,3h-3l2,-5z" />
+</vector>

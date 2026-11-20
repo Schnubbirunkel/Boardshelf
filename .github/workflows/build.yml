@@ -1,0 +1,63 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare signing key
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "LUDOTHEK_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="0.0.0-dev.${{ github.run_number }}"; fi
+          echo "APP_VERSION=$V" >> "$GITHUB_ENV"
+
+      - name: Build APKs
+        env:
+          LUDOTHEK_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          LUDOTHEK_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          LUDOTHEK_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease assembleDebug \
+            -PappVersionName="$APP_VERSION" -PappVersionCode=${{ github.run_number }}
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/Ludothek-$APP_VERSION.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/Ludothek-$APP_VERSION-debug.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ludothek-apk
+          path: dist/*.apk
+
+      - name: Attach APK to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Ludothek $APP_VERSION" --notes "Ludothek $APP_VERSION"
+          gh release upload "$GITHUB_REF_NAME" "dist/Ludothek-$APP_VERSION.apk" --clobber
