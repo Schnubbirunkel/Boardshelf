@@ -1,0 +1,22 @@
+name: API check
+
+on:
+  workflow_dispatch:
+    inputs:
+      ean:
+        description: "EAN to look up"
+        default: "4002051682682"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query product sources
+        run: |
+          E="${{ inputs.ean }}"
+          echo "== UPCitemdb lookup"; curl -s -A "Boardshelf/1.3" "https://api.upcitemdb.com/prod/trial/lookup?upc=$E" | head -c 2000; echo
+          echo "== UPCitemdb search"; curl -s -A "Boardshelf/1.3" "https://api.upcitemdb.com/prod/trial/search?s=Catan&match_mode=0&type=product" | head -c 1500; echo
+          echo "== Open Products Facts"; curl -s -A "Boardshelf/1.3" "https://world.openproductsfacts.org/api/v2/product/$E.json?fields=product_name,brands,image_front_url" | head -c 800; echo
+          echo "== Open Food Facts"; curl -s -A "Boardshelf/1.3" "https://world.openfoodfacts.org/api/v2/product/$E.json?fields=product_name,brands,image_front_url" | head -c 800; echo
+          echo "== Wikidata GTIN"; curl -s -A "Boardshelf/1.3" "https://www.wikidata.org/w/api.php?action=query&format=json&list=search&srsearch=haswbstatement:P3962=$E" | head -c 800; echo
+          echo "== Wikidata Catan GTIN count"; curl -s -A "Boardshelf/1.3" "https://www.wikidata.org/w/api.php?action=query&format=json&list=search&srsearch=haswbstatement:P3962&srlimit=1" | head -c 400; echo
