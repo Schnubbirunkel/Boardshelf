@@ -73,9 +73,13 @@ adb shell "screenrecord --time-limit 6 --bit-rate 6000000 /sdcard/open.mp4 & sle
 sleep 3
 adb pull /sdcard/open.mp4 "$OUT/open.mp4"
 # peek gesture: long-press and slide over the boxes
+adb shell am force-stop com.google.android.apps.nexuslauncher || true
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
 adb shell am force-stop "$PKG"
 adb shell "am start -W -n $PKG/$ACT --es lang de" > /dev/null
 sleep 6
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
+sleep 1
 adb shell "screenrecord --time-limit 7 --bit-rate 6000000 /sdcard/peek.mp4 & sleep 1; input motionevent DOWN 95 840; sleep 1.2; for x in 120 145 170 200 230 260 290 320 350 380; do input motionevent MOVE \$x 840; sleep 0.35; done; sleep 1; input motionevent UP 380 840; wait" || true
 sleep 3
 adb pull /sdcard/peek.mp4 "$OUT/peek.mp4"
