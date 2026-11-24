@@ -14,6 +14,7 @@ data class AppSettings(
     val aiKey: String = "",
     val aiModel: String = "",
     val aiBaseUrl: String = "",
+    val gameUpcKey: String = "",
 )
 
 class SettingsStore(context: Context) {
@@ -33,6 +34,7 @@ class SettingsStore(context: Context) {
         aiKey = prefs.getString("aiKey", "") ?: "",
         aiModel = prefs.getString("aiModel", "") ?: "",
         aiBaseUrl = prefs.getString("aiBaseUrl", "") ?: "",
+        gameUpcKey = prefs.getString("gameUpcKey", "") ?: "",
     )
 
     fun update(block: (AppSettings) -> AppSettings) {
@@ -46,6 +48,7 @@ class SettingsStore(context: Context) {
             .putString("aiKey", s.aiKey.trim())
             .putString("aiModel", s.aiModel.trim())
             .putString("aiBaseUrl", s.aiBaseUrl.trim())
+            .putString("gameUpcKey", s.gameUpcKey.trim())
             .apply()
         _state.value = s
     }

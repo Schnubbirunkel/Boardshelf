@@ -26,7 +26,33 @@ data class CoverCandidate(val url: String, val source: String, val label: String
  *  - Open Products Facts (open database)
  *  - Wikidata GTIN statements (P3962)
  */
-class ProductApi(private val http: OkHttpClient) {
+class ProductApi(private val http: OkHttpClient, private val gameUpcKey: () -> String = { "" }) {
+
+    /**
+     * GameUPC: a board-game barcode database linked to BoardGameGeek ids (also European EANs).
+     * Without an own key the public test access is used.
+     */
+    suspend fun gameUpc(ean: String): List<SearchHit> {
+        val key = gameUpcKey().trim()
+        val url = if (key.isEmpty()) "https://api.gameupc.com/test/upc/$ean" else "https://api.gameupc.com/v1/upc/$ean"
+        val json = JSONObject(http.getString(url, mapOf("x-api-key" to key.ifEmpty { "test_test_test_test_test" }, "Accept" to "application/json")))
+        val infos = json.optJSONArray("bgg_info") ?: return emptyList()
+        return (0 until infos.length()).mapNotNull { i ->
+            val o = infos.optJSONObject(i) ?: return@mapNotNull null
+            val id = o.optInt("id", -1).takeIf { it > 0 } ?: return@mapNotNull null
+            SearchHit(
+                source = Source.GAMEUPC,
+                id = id.toString(),
+                name = o.optString("name").ifBlank { json.optString("name") },
+                year = o.optString("published").toIntOrNull(),
+                thumbnail = o.optString("thumbnail_url").ifBlank { null },
+                subtitle = "GameUPC · ${o.optInt("confidence")} %",
+                bggId = id,
+                imageUrl = o.optString("image_url").ifBlank { null },
+            )
+        }.filter { it.name.isNotBlank() }
+    }
+
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
 

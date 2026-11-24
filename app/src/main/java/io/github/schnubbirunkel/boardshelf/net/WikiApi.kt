@@ -105,6 +105,12 @@ class WikiApi(private val http: OkHttpClient) {
         )
     }
 
+    /** Wikidata item of a game known by its BGG id (P2339). */
+    suspend fun qidForBggId(bggId: Int): String? {
+        val res = json("$api?action=query&format=json&list=search&srlimit=1&srsearch=${enc("haswbstatement:P2339=$bggId")}")
+        return res.optJSONObject("query")?.optJSONArray("search")?.optJSONObject(0)?.optString("title")?.takeIf { it.startsWith("Q") }
+    }
+
     /** Finds a Wikipedia summary for a game known by its BGG id (P2339). */
     suspend fun summaryForBggId(bggId: Int): Triple<String, String, String?>? {
         val res = json("$api?action=query&format=json&list=search&srlimit=1&srsearch=${enc("haswbstatement:P2339=$bggId")}")

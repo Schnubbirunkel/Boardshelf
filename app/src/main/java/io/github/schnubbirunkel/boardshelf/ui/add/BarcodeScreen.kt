@@ -196,7 +196,7 @@ fun BarcodeScreen(initialCode: String?, onBack: () -> Unit, onOpenGame: (Long) -
                                     val sub = listOfNotNull(hit.year?.toString(), hit.subtitle).joinToString(" · ")
                                     if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall, maxLines = 2)
                                 }
-                                Text(if (hit.source == Source.BGG) "BGG" else "Wikidata", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(when (hit.source) { Source.BGG -> "BGG"; Source.GAMEUPC -> "GameUPC"; else -> "Wikidata" }, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }

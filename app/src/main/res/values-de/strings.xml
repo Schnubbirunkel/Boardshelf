@@ -169,6 +169,8 @@
     <string name="settings_demo">Demo-Sammlung</string>
     <string name="settings_demo_explain">Fügt 15 ausgedachte Spiele mit generierten Covern hinzu – zum Ausprobieren des Regals.</string>
     <string name="settings_demo_load">Demo-Spiele laden</string>
+    <string name="settings_gameupc_explain">Barcodes werden in GameUPC (Brettspiel-Barcodes inkl. europäischer Ausgaben), UPCitemdb, Open Products Facts und Wikidata gesucht. Ohne eigenen GameUPC-Schlüssel wird der öffentliche Testzugang genutzt; für den Dauerbetrieb gibt es auf gameupc.com einen kostenlosen Schlüssel.</string>
+    <string name="settings_gameupc_key">GameUPC-Schlüssel (optional)</string>
     <string name="settings_import_collection">Meine BGG-Sammlung importieren</string>
     <string name="settings_import_done">%1$d Spiele importiert, %2$d standen schon im Regal.</string>
     <string name="settings_import_progress">Importiere %1$d von %2$d…</string>

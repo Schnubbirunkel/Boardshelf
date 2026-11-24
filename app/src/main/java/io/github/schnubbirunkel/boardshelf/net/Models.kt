@@ -1,6 +1,6 @@
 package io.github.schnubbirunkel.boardshelf.net
 
-enum class Source { BGG, WIKIDATA }
+enum class Source { BGG, WIKIDATA, GAMEUPC }
 
 data class SearchHit(
     val source: Source,
@@ -10,6 +10,8 @@ data class SearchHit(
     val thumbnail: String? = null,
     val subtitle: String? = null,
     val bggId: Int? = null,
+    /** Large cover picture, if the source knows one (GameUPC). */
+    val imageUrl: String? = null,
 )
 
 /** Game information gathered from an online source. Box dimensions in centimetres. */

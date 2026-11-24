@@ -229,7 +229,7 @@ fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () ->
                             },
                             trailingContent = {
                                 SuggestionChip(onClick = {}, label = {
-                                    Text(if (hit.source == Source.BGG) "BGG" else "Wikidata", style = MaterialTheme.typography.labelSmall)
+                                    Text(when (hit.source) { Source.BGG -> "BGG"; Source.GAMEUPC -> "GameUPC"; else -> "Wikidata" }, style = MaterialTheme.typography.labelSmall)
                                 })
                             }
                         )

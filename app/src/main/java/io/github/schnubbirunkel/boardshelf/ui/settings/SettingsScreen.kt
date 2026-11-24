@@ -225,6 +225,14 @@ fun SettingsScreen(onBack: () -> Unit) {
                     }
                     Switch(settings.useWikidata, { v -> repo.settings.update { it.copy(useWikidata = v) } })
                 }
+                Text(stringResource(R.string.settings_gameupc_explain), style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    settings.gameUpcKey, { v -> repo.settings.update { it.copy(gameUpcKey = v) } },
+                    label = { Text(stringResource(R.string.settings_gameupc_key)) }, singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextButton(onClick = { context.openUrl("https://gameupc.com") }) { Text("gameupc.com") }
             }
 
             Section(stringResource(R.string.settings_language)) {

@@ -170,6 +170,8 @@
     <string name="settings_demo">Demo collection</string>
     <string name="settings_demo_explain">Adds 15 fictional games with generated covers – to try out the shelf.</string>
     <string name="settings_demo_load">Load demo games</string>
+    <string name="settings_gameupc_explain">Barcodes are looked up in GameUPC (board game barcodes incl. European editions), UPCitemdb, Open Products Facts and Wikidata. Without an own GameUPC key the public test access is used; for regular use you can request a free key at gameupc.com.</string>
+    <string name="settings_gameupc_key">GameUPC key (optional)</string>
     <string name="settings_import_collection">Import my BGG collection</string>
     <string name="settings_import_done">%1$d games imported, %2$d were already on the shelf.</string>
     <string name="settings_import_progress">Importing %1$d of %2$d…</string>

@@ -138,6 +138,19 @@ class Repository(
         val hasToken = bgg.hasToken
         return when (hit.source) {
             Source.BGG -> enrichWithWiki(bgg.details(hit.id.toInt()))
+            Source.GAMEUPC -> {
+                val bggId = hit.bggId!!
+                val base = if (hasToken) runCatching { bgg.details(bggId) }.getOrNull() else null
+                base?.let { enrichWithWiki(it) } ?: run {
+                    // no BGG token: take the details from Wikidata via the BGG id
+                    val qid = runCatching { wiki.qidForBggId(bggId) }.getOrNull()
+                    val w = qid?.let { runCatching { wiki.details(it) }.getOrNull() }
+                    (w ?: GameInfo(name = hit.name)).copy(
+                        name = hit.name, year = w?.year ?: hit.year, bggId = bggId,
+                        imageUrl = hit.imageUrl ?: w?.imageUrl,
+                    )
+                }
+            }
             Source.WIKIDATA -> {
                 val w = wiki.details(hit.id)
                 val bggId = w.bggId
@@ -302,12 +315,16 @@ class Repository(
     suspend fun lookupBarcode(code: String): BarcodeResult = coroutineScope {
         val ean = code.filter { it.isDigit() }
         db.games().byEan(ean)?.let { return@coroutineScope BarcodeResult(ean, it, emptyList(), null, emptyList()) }
+        val upcJob = async { runCatching { products.gameUpc(ean) }.getOrDefault(emptyList()) }
         val gtinHit = async { runCatching { wiki.byGtin(ean) }.getOrNull() }
-        val products = runCatching { products.byBarcode(ean) }.getOrDefault(emptyList())
-        val query = products.firstOrNull()?.let { io.github.schnubbirunkel.boardshelf.net.ProductApi.cleanTitle(it.title, it.brand) }
-        val found = if (query != null) search(query).hits else emptyList()
-        val hits = (listOfNotNull(gtinHit.await()) + found).distinctBy { it.source.name + it.id }
-        BarcodeResult(ean, null, products, query, hits)
+        val productsJob = async { runCatching { products.byBarcode(ean) }.getOrDefault(emptyList()) }
+        val upc = upcJob.await()
+        val prods = productsJob.await()
+        val query = upc.firstOrNull()?.name
+            ?: prods.firstOrNull()?.let { io.github.schnubbirunkel.boardshelf.net.ProductApi.cleanTitle(it.title, it.brand) }
+        val found = if (upc.isEmpty() && query != null) search(query).hits else emptyList()
+        val hits = (upc + listOfNotNull(gtinHit.await()) + found).distinctBy { it.bggId?.let { b -> "bgg$b" } ?: (it.source.name + it.id) }
+        BarcodeResult(ean, null, prods, query, hits)
     }
 
     /** Imports a hit found via barcode: remembers the EAN and uses the shop picture of exactly this box as cover. */
@@ -316,7 +333,7 @@ class Repository(
         db.games().get(id)?.let { g -> if (g.ean == null) db.games().update(g.copy(ean = result.ean)) }
         val g = db.games().get(id) ?: return id
         if (g.coverPath == null) {
-            for (url in result.products.flatMap { it.images }.distinct()) {
+            for (url in (listOfNotNull(hit?.imageUrl) + result.products.flatMap { it.images }).distinct()) {
                 if (trySetCover(id, url)) break
             }
         }
