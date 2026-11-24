@@ -53,6 +53,12 @@ for lang in de en; do
   if [ "$lang" = "de" ]; then
     shot "test_import_catan" 30 0 --es barcode_import 4002051682682
     shot "test_import_catan_info" 6 1 --es route "'game/16'"
+    adb shell am force-stop "$PKG"
+    adb shell "am start -W -n $PKG/$ACT --ez csv_test true" > /dev/null
+    sleep 75
+    adb shell input swipe 540 1900 540 300 300; sleep 1; adb shell input swipe 540 1900 540 300 300; sleep 2
+    adb exec-out screencap -p > "$OUT/test_csv_shelf.png"
+    shot "test_csv_game" 6 1 --es route "'game/18'"
   fi
 done
 # record the take-out animation (animations enabled for this part)

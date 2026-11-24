@@ -207,6 +207,11 @@ class MainActivity : AppCompatActivity() {
                 Log.e("Boardshelf", "Demo seeding failed", t)
             }
             val cropGame = intent.getLongExtra("crop_game", -1L)
+            if (intent.getBooleanExtra("csv_test", false)) {
+                runCatching { repo.importBggCsv(TEST_CSV, includeExpansions = false, onlyOwned = true) { _, _ -> } }
+                    .onFailure { Log.e("Boardshelf", "csv test failed", it) }
+                return@launch
+            }
             intent.getStringExtra("barcode_import")?.let { code ->
                 try {
                     val r = repo.lookupBarcode(code)
@@ -228,3 +233,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+private const val TEST_CSV = "objectname,objectid,rating,numplays,weight,own,fortrade,want,wanttobuy,wanttoplay,prevowned,preordered,wishlist,wishlistpriority,wishlistcomment,comment,conditiontext,haspartslist,wantpartslist,collid,baverage,average,avgweight,rank,numowned,objecttype,originalname,minplayers,maxplayers,playingtime,maxplaytime,minplaytime,yearpublished,bggrecplayers,bggbestplayers,bggrecagerange,bgglanguagedependence,publisherid,imageid,year,language,other,itemtype,pricepaid,pp_currency,currvalue,cv_currency,acquisitiondate,acquiredfrom,quantity,privatecomment\nCatan,13,7,0,0,1,0,0,0,0,0,0,0,,,,,,,1,6.9,7.1,2.3,500,1,thing,Catan,3,4,120,120,60,1995,3-4,4,10+,,,,,,,standalone,,,,,,,1,\n7 Wonders Duel,173346,9,0,0,1,0,0,0,0,0,0,0,,,Lieblingsspiel zu zweit,,,,2,7.9,8.1,2.2,20,1,thing,7 Wonders Duel,2,2,30,30,30,2015,2,2,10+,,,,,,,standalone,,,,,,,1,\nAzul,230802,8,0,0,1,0,0,0,0,0,0,0,,,,,,,3,7.6,7.7,1.8,80,1,thing,Azul,2,4,45,45,30,2017,2-4,2,8+,,,,,,,standalone,,,,,,,1,\nWingspan,266192,8.5,0,0,1,0,0,0,0,0,0,0,,,,,,,4,7.9,8.0,2.5,30,1,thing,Wingspan,1,5,70,70,40,2019,1-5,3,10+,,,,,,,standalone,,,,,,,1,\nTerraforming Mars,167791,9,0,0,1,0,0,0,0,0,0,0,,,,,,,5,8.2,8.4,3.3,10,1,thing,Terraforming Mars,1,5,120,120,120,2016,1-5,3,12+,,,,,,,standalone,,,,,,,1,\nCarcassonne,822,7,0,0,1,0,0,0,0,0,0,0,,,,,,,6,7.3,7.4,1.9,200,1,thing,Carcassonne,2,5,45,45,30,2000,2-5,2,7+,,,,,,,standalone,,,,,,,1,\nTicket to Ride,9209,7,0,0,1,0,0,0,0,0,0,0,,,,,,,7,7.3,7.4,1.8,220,1,thing,Ticket to Ride,2,5,60,60,30,2004,2-5,4,8+,,,,,,,standalone,,,,,,,1,\nPandemic,30549,7.5,0,0,1,0,0,0,0,0,0,0,,,,,,,8,7.5,7.6,2.4,120,1,thing,Pandemic,2,4,45,45,45,2008,2-4,4,8+,,,,,,,standalone,,,,,,,1,\nCodenames,178900,7,0,0,1,0,0,0,0,0,0,0,,,,,,,9,7.5,7.6,1.3,140,1,thing,Codenames,2,8,15,15,15,2015,2-8,6,14+,,,,,,,standalone,,,,,,,1,\nDominion,36218,7,0,0,1,0,0,0,0,0,0,0,,,,,,,10,7.5,7.6,2.4,130,1,thing,Dominion,2,4,30,30,30,2008,2-4,3,13+,,,,,,,standalone,,,,,,,1,\nSplendor,148228,7,0,0,1,0,0,0,0,0,0,0,,,,,,,11,7.3,7.4,1.8,210,1,thing,Splendor,2,4,30,30,30,2014,2-4,3,10+,,,,,,,standalone,,,,,,,1,\nAgricola,31260,8,0,0,1,0,0,0,0,0,0,0,,,,,,,12,7.8,7.9,3.6,40,1,thing,Agricola,1,5,150,150,30,2007,1-5,4,12+,,,,,,,standalone,,,,,,,1,\nBrass: Birmingham,224517,9.5,0,0,1,0,0,0,0,0,0,0,,,,,,,13,8.4,8.6,3.9,1,1,thing,Brass: Birmingham,2,4,120,120,60,2018,2-4,4,14+,,,,,,,standalone,,,,,,,1,\nCascadia,295947,8,0,0,1,0,0,0,0,0,0,0,,,,,,,14,7.8,7.9,1.9,60,1,thing,Cascadia,1,4,45,45,30,2021,1-4,3,10+,,,,,,,standalone,,,,,,,1,\nCatan: Seafarers,325,6,0,0,1,0,0,0,0,0,0,0,,,,,,,15,7.0,7.1,2.4,600,1,thing,Catan: Seafarers,3,4,90,90,60,1997,3-4,4,10+,,,,,,,expansion,,,,,,,1,\n"
