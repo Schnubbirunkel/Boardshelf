@@ -139,10 +139,27 @@ fun CoverSearchScreen(gameId: Long, onDone: () -> Unit, onPicked: (String) -> Un
                 val candidates by produceState<List<io.github.schnubbirunkel.boardshelf.net.CoverCandidate>?>(null, g.id) {
                     value = runCatching { repo.coverCandidates(g) }.getOrDefault(emptyList())
                 }
-                Text(
-                    stringResource(R.string.cover_suggestions), style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(start = 12.dp, top = 6.dp)
-                )
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 6.dp)) {
+                    Text(stringResource(R.string.cover_suggestions), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    if (repo.ai.enabled) {
+                        androidx.compose.material3.FilledTonalButton(
+                            enabled = !saving && candidates != null,
+                            onClick = {
+                                saving = true
+                                scope.launch {
+                                    try {
+                                        val ok = repo.aiCover(g, candidates.orEmpty())
+                                        if (ok) onDone() else snackbar.showSnackbar(context.getString(R.string.cover_ai_none))
+                                    } catch (e: Exception) {
+                                        snackbar.showSnackbar(context.errorText(e))
+                                    } finally {
+                                        saving = false
+                                    }
+                                }
+                            }
+                        ) { Text(stringResource(R.string.cover_ai_pick)) }
+                    }
+                }
                 when (val c = candidates) {
                     null -> LinearProgressIndicator(Modifier.fillMaxWidth().padding(12.dp))
                     else -> if (c.isEmpty()) Text(

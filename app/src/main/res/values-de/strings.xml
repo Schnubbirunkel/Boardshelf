@@ -25,6 +25,10 @@
     <string name="add_manual">Manuell anlegen</string>
     <string name="add_no_results">Keine Spiele gefunden.</string>
     <string name="add_no_token">Gesucht wird in Wikidata und Wikipedia, Cover kommen aus Produktdatenbanken. Tipp: Barcode auf der Schachtel scannen – das findet genau deine Ausgabe samt Cover.</string>
+    <string name="add_photo_ai">Foto der Schachtel</string>
+    <string name="add_photo_ai_found">Erkannt: %1$s – wähle das passende Spiel. Dein Foto wird zum Cover.</string>
+    <string name="add_photo_ai_none">Auf dem Foto wurde keine Spielschachtel erkannt.</string>
+    <string name="add_photo_ai_running">KI liest die Schachtel …</string>
     <string name="add_search_label">Titel suchen (BGG / Wikidata)</string>
     <string name="add_title">Spiel hinzufügen</string>
     <string name="backup_done">Sicherung gespeichert.</string>
@@ -47,6 +51,8 @@
     <string name="browser_hint">Öffne oder lade ein PDF herunter, um es als Anleitung zu speichern.</string>
     <string name="browser_save_title">Als Anleitung speichern?</string>
     <string name="browser_title">Anleitung suchen</string>
+    <string name="cover_ai_none">Die KI hat unter den Vorschlägen kein Bild der Schachtel-Vorderseite gefunden.</string>
+    <string name="cover_ai_pick">KI auswählen lassen</string>
     <string name="cover_amazon_term">Brettspiel</string>
     <string name="cover_missing">Noch kein Cover. Such dir das passende Schachtelbild im Web aus oder fotografiere deine eigene Schachtel.</string>
     <string name="cover_search_hint">Lange auf das gewünschte Schachtelbild drücken. Tipp: Treffer erst öffnen, dann bekommst du die große Version.</string>
@@ -139,6 +145,18 @@
     <string name="savestate_photo_count">%1$d Fotos</string>
     <string name="savestate_take_photo">Spieltisch fotografieren</string>
     <string name="settings_about">Über</string>
+    <string name="settings_ai">KI-Bilderkennung (optional)</string>
+    <string name="settings_ai_custom">Selbst gehostet</string>
+    <string name="settings_ai_explain">Eine Bild-KI prüft Cover-Vorschläge (Vorderseite der Schachtel? Das richtige Spiel?), schneidet sie automatisch zu und erkennt Spiele auf Fotos der Schachtel. Die Bilder werden verkleinert an den gewählten Dienst geschickt.</string>
+    <string name="settings_ai_get_key">API-Schlüssel holen</string>
+    <string name="settings_ai_key">API-Schlüssel</string>
+    <string name="settings_ai_key_optional">API-Schlüssel (optional)</string>
+    <string name="settings_ai_model">Modell (leer = Standard)</string>
+    <string name="settings_ai_models">Bild-Modelle für Ollama</string>
+    <string name="settings_ai_off">Aus</string>
+    <string name="settings_ai_test">Verbindung testen</string>
+    <string name="settings_ai_test_ok">Funktioniert – das Modell sah: %1$s</string>
+    <string name="settings_ai_url">Server-Adresse (OpenAI-kompatibel, z. B. Ollama …/v1)</string>
     <string name="settings_backup">Datensicherung</string>
     <string name="settings_backup_explain">Exportiert die komplette Sammlung inkl. Cover, Fotos und Anleitungen als ZIP-Datei.</string>
     <string name="settings_backup_export">Exportieren</string>

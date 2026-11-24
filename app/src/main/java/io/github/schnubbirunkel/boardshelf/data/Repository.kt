@@ -16,6 +16,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import java.io.File
@@ -33,9 +34,13 @@ class Repository(
     val bgg: BggApi,
     val wiki: WikiApi,
     val products: io.github.schnubbirunkel.boardshelf.net.ProductApi,
+    val ai: io.github.schnubbirunkel.boardshelf.net.AiVision,
     val settings: SettingsStore,
 ) {
     val games: Flow<List<Game>> = db.games().observeAll()
+
+    /** For work that should outlive a screen (automatic cover search). */
+    private val background = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.IO)
 
     /** Games handed over between screens so the detail view can draw instantly. */
     val handover = java.util.concurrent.ConcurrentHashMap<Long, Game>()
@@ -161,7 +166,8 @@ class Repository(
         val id = db.games().insert(game)
         info.imageUrl?.let { downloadCover(id, it) }
         if (db.games().get(id)?.coverPath == null && info.publishers.none { it == "Boardshelf Demo" }) {
-            runCatching { autoCover(id) }
+            // in the background: AI checks can take a while, the box appears on the shelf right away
+            background.launch { runCatching { autoCover(id) } }
         }
         return id
     }
@@ -343,14 +349,71 @@ class Repository(
         out.distinctBy { it.url }.sortedByDescending { it.score }
     }
 
-    /** Sets a cover automatically only when a candidate is very likely the right box. */
-    suspend fun autoCover(gameId: Long): Boolean {
+    /**
+     * Sets a cover automatically. With a vision AI configured, the AI checks the candidates
+     * (front of the box? same game?) and the picture is cropped to the box it found. Without AI
+     * only very likely candidates (score) are used.
+     */
+    suspend fun autoCover(gameId: Long, force: Boolean = false): Boolean {
         val g = db.games().get(gameId) ?: return false
-        if (g.coverPath != null) return true
-        for (c in coverCandidates(g).filter { it.score >= 75 }.take(4)) {
+        if (g.coverPath != null && !force) return true
+        val candidates = coverCandidates(g)
+        if (ai.enabled) {
+            if (runCatching { aiCover(g, candidates) }.getOrDefault(false)) return true
+            if (force) return false
+        }
+        for (c in candidates.filter { it.score >= 75 }.take(4)) {
             if (trySetCover(gameId, c.url)) return true
         }
         return false
+    }
+
+    /** Lets the AI pick (and crop) the best cover among the candidates. Throws on AI errors. */
+    suspend fun aiCover(g: Game, candidates: List<io.github.schnubbirunkel.boardshelf.net.CoverCandidate>): Boolean = withContext(Dispatchers.IO) {
+        val loaded = mutableListOf<Pair<File, android.graphics.Bitmap>>()
+        try {
+            for (c in candidates.take(10)) {
+                if (loaded.size >= 6) break
+                val f = runCatching { downloadCoverCandidate(c.url, emptyMap()) }.getOrNull() ?: continue
+                val bmp = Images.decodeSampled(f, 1600)
+                if (bmp == null) { f.delete(); continue }
+                loaded += f to bmp
+            }
+            if (loaded.isEmpty()) return@withContext false
+            val verdicts = ai.judgeCovers(g.name, g.publishers?.substringBefore(','), g.year, loaded.map { it.second })
+            val best = verdicts
+                .filter { it.isFrontCover && it.sameGame && it.confidence >= 0.6f && it.index in loaded.indices }
+                .maxByOrNull { it.confidence } ?: return@withContext false
+            setCoverCropped(g.id, loaded[best.index].second, best.box)
+            true
+        } finally {
+            loaded.forEach { it.first.delete() }
+        }
+    }
+
+    fun unknownBoxText(): String = context.getString(R.string.add_photo_ai_none)
+
+    /** AI recognises the game on a photo of the box. */
+    suspend fun identifyPhoto(file: File): Pair<io.github.schnubbirunkel.boardshelf.net.BoxIdentification, android.graphics.Bitmap>? =
+        withContext(Dispatchers.IO) {
+            val bmp = Images.decodeSampled(file, 1600) ?: return@withContext null
+            ai.identifyBox(bmp)?.let { it to bmp }
+        }
+
+    /** Crops [bmp] to the relative [box] (with a small margin) and uses it as cover. */
+    suspend fun setCoverCropped(gameId: Long, bmp: android.graphics.Bitmap, box: FloatArray?) = withContext(Dispatchers.IO) {
+        val out = if (box == null) bmp else {
+            val m = 0.01f
+            val l = ((box[0] - m).coerceAtLeast(0f) * bmp.width).toInt()
+            val t = ((box[1] - m).coerceAtLeast(0f) * bmp.height).toInt()
+            val r = ((box[2] + m).coerceAtMost(1f) * bmp.width).toInt()
+            val b = ((box[3] + m).coerceAtMost(1f) * bmp.height).toInt()
+            if (r - l < 50 || b - t < 50) bmp else android.graphics.Bitmap.createBitmap(bmp, l, t, r - l, b - t)
+        }
+        val f = newCoverCandidate()
+        f.outputStream().use { out.compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, it) }
+        setCoverFromFile(gameId, f)
+        f.delete()
     }
 
     // ---------------------------------------------------------------- BGG collection import

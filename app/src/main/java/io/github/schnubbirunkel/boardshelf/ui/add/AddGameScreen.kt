@@ -18,6 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -75,12 +78,36 @@ data class AddUiState(
     val searched: Boolean = false,
     val importing: String? = null,
     val importError: Throwable? = null,
+    val identifying: Boolean = false,
+    /** Photo of the box taken for AI recognition – becomes the cover when its front was found. */
+    val photo: android.graphics.Bitmap? = null,
+    val photoBox: FloatArray? = null,
+    val photoTitle: String? = null,
 )
 
 class AddGameViewModel(private val repo: Repository) : ViewModel() {
     private val _state = MutableStateFlow(AddUiState())
     val state = _state.asStateFlow()
     val hasToken get() = repo.bgg.hasToken
+    val aiEnabled get() = repo.ai.enabled
+
+    fun identify(file: java.io.File) {
+        _state.update { it.copy(identifying = true, importError = null) }
+        viewModelScope.launch {
+            try {
+                val r = repo.identifyPhoto(file)
+                if (r == null) _state.update { it.copy(identifying = false, importError = java.io.IOException(repo.unknownBoxText())) }
+                else {
+                    _state.update { it.copy(identifying = false, query = r.first.title, photo = r.second, photoBox = r.first.box, photoTitle = r.first.title) }
+                    search()
+                }
+            } catch (t: Throwable) {
+                _state.update { it.copy(identifying = false, importError = t) }
+            } finally {
+                file.delete()
+            }
+        }
+    }
 
     fun setQuery(q: String) = _state.update { it.copy(query = q) }
 
@@ -99,6 +126,8 @@ class AddGameViewModel(private val repo: Repository) : ViewModel() {
         viewModelScope.launch {
             try {
                 val id = repo.importHit(hit)
+                val st = _state.value
+                if (st.photo != null && st.photoBox != null) repo.setCoverCropped(id, st.photo, st.photoBox)
                 _state.update { it.copy(importing = null) }
                 onDone(id)
             } catch (t: Throwable) {
@@ -120,6 +149,7 @@ fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () ->
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
     var manualDialog by remember { mutableStateOf(false) }
+    val photoCamera = io.github.schnubbirunkel.boardshelf.ui.rememberCamera { vm.identify(it) }
 
     Scaffold(
         topBar = {
@@ -141,7 +171,10 @@ fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () ->
                 keyboardActions = KeyboardActions(onSearch = { keyboard?.hide(); vm.search() }),
                 modifier = Modifier.fillMaxWidth()
             )
-            Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (vm.aiEnabled) OutlinedButton(onClick = photoCamera) {
+                    Icon(Icons.Default.PhotoCamera, null, Modifier.size(18.dp)); Text(" " + stringResource(R.string.add_photo_ai))
+                }
                 OutlinedButton(onClick = onScan) {
                     Icon(Icons.Default.QrCodeScanner, null, Modifier.size(18.dp)); Text(" " + stringResource(R.string.action_scan))
                 }
@@ -160,6 +193,10 @@ fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () ->
             state.errors.forEach {
                 Text(context.errorText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
+            if (state.identifying) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 6.dp)) {
+                CircularProgressIndicator(Modifier.size(20.dp)); Text("  " + stringResource(R.string.add_photo_ai_running))
+            }
+            state.photoTitle?.let { Text(stringResource(R.string.add_photo_ai_found, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
             state.importError?.let {
                 Text(context.errorText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }

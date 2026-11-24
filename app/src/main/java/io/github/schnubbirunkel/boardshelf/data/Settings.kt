@@ -10,6 +10,10 @@ data class AppSettings(
     val bggUsername: String = "",
     val spineMode: Boolean = false,
     val useWikidata: Boolean = true,
+    val aiProvider: io.github.schnubbirunkel.boardshelf.net.AiProvider = io.github.schnubbirunkel.boardshelf.net.AiProvider.NONE,
+    val aiKey: String = "",
+    val aiModel: String = "",
+    val aiBaseUrl: String = "",
 )
 
 class SettingsStore(context: Context) {
@@ -24,6 +28,11 @@ class SettingsStore(context: Context) {
         bggUsername = prefs.getString("bggUsername", "") ?: "",
         spineMode = prefs.getBoolean("spineMode", false),
         useWikidata = prefs.getBoolean("useWikidata", true),
+        aiProvider = runCatching { io.github.schnubbirunkel.boardshelf.net.AiProvider.valueOf(prefs.getString("aiProvider", "NONE")!!) }
+            .getOrDefault(io.github.schnubbirunkel.boardshelf.net.AiProvider.NONE),
+        aiKey = prefs.getString("aiKey", "") ?: "",
+        aiModel = prefs.getString("aiModel", "") ?: "",
+        aiBaseUrl = prefs.getString("aiBaseUrl", "") ?: "",
     )
 
     fun update(block: (AppSettings) -> AppSettings) {
@@ -33,6 +42,10 @@ class SettingsStore(context: Context) {
             .putString("bggUsername", s.bggUsername.trim())
             .putBoolean("spineMode", s.spineMode)
             .putBoolean("useWikidata", s.useWikidata)
+            .putString("aiProvider", s.aiProvider.name)
+            .putString("aiKey", s.aiKey.trim())
+            .putString("aiModel", s.aiModel.trim())
+            .putString("aiBaseUrl", s.aiBaseUrl.trim())
             .apply()
         _state.value = s
     }

@@ -25,6 +25,10 @@
     <string name="add_manual">Add manually</string>
     <string name="add_no_results">No games found.</string>
     <string name="add_no_token">The search uses Wikidata and Wikipedia; covers come from product databases. Tip: scan the barcode on the box – that finds the exact edition and its cover.</string>
+    <string name="add_photo_ai">Photo of the box</string>
+    <string name="add_photo_ai_found">Recognised: %1$s – pick the matching game. Your photo becomes the cover.</string>
+    <string name="add_photo_ai_none">No game box recognised on the photo.</string>
+    <string name="add_photo_ai_running">AI is reading the box …</string>
     <string name="add_search_label">Search title (BGG / Wikidata)</string>
     <string name="add_title">Add game</string>
     <string name="app_name" translatable="false">Boardshelf</string>
@@ -48,6 +52,8 @@
     <string name="browser_hint">Open or download a PDF to store it as rulebook.</string>
     <string name="browser_save_title">Save as rulebook?</string>
     <string name="browser_title">Find rulebook</string>
+    <string name="cover_ai_none">The AI found no picture of the box front among the suggestions.</string>
+    <string name="cover_ai_pick">Let AI choose</string>
     <string name="cover_amazon_term">board game</string>
     <string name="cover_missing">No cover yet. Pick the right box picture on the web or photograph your own box.</string>
     <string name="cover_search_hint">Long-press the box picture you want. Tip: open a result first to get the large version.</string>
@@ -140,6 +146,18 @@
     <string name="savestate_photo_count">%1$d photos</string>
     <string name="savestate_take_photo">Photograph table</string>
     <string name="settings_about">About</string>
+    <string name="settings_ai">AI picture recognition (optional)</string>
+    <string name="settings_ai_custom">Self-hosted</string>
+    <string name="settings_ai_explain">A vision AI checks cover suggestions (front of the box? the right game?), crops them automatically and recognises games on photos of the box. Images are sent downscaled to the chosen service.</string>
+    <string name="settings_ai_get_key">Get API key</string>
+    <string name="settings_ai_key">API key</string>
+    <string name="settings_ai_key_optional">API key (optional)</string>
+    <string name="settings_ai_model">Model (empty = default)</string>
+    <string name="settings_ai_models">Vision models for Ollama</string>
+    <string name="settings_ai_off">Off</string>
+    <string name="settings_ai_test">Test connection</string>
+    <string name="settings_ai_test_ok">Works – the model saw: %1$s</string>
+    <string name="settings_ai_url">Server address (OpenAI-compatible, e.g. Ollama …/v1)</string>
     <string name="settings_backup">Backup</string>
     <string name="settings_backup_explain">Exports the whole collection incl. covers, photos and rulebooks as ZIP file.</string>
     <string name="settings_backup_export">Export</string>

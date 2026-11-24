@@ -18,6 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.horizontalScroll
+import io.github.schnubbirunkel.boardshelf.net.AiProvider
 import io.github.schnubbirunkel.boardshelf.ui.theme.GlassCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -70,6 +73,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     var importing by remember { mutableStateOf(false) }
     var backupStatus by remember { mutableStateOf<String?>(null) }
     var restartNeeded by remember { mutableStateOf(false) }
+    var aiTest by remember { mutableStateOf<String?>(null) }
+    var aiTesting by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri != null) scope.launch {
@@ -142,6 +147,74 @@ fun SettingsScreen(onBack: () -> Unit) {
                     stringResource(R.string.powered_by_bgg), style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
+            }
+
+            Section(stringResource(R.string.settings_ai)) {
+                Text(stringResource(R.string.settings_ai_explain), style = MaterialTheme.typography.bodySmall)
+                val providers = listOf(
+                    AiProvider.NONE to stringResource(R.string.settings_ai_off),
+                    AiProvider.CLAUDE to "Claude",
+                    AiProvider.GEMINI to "Gemini",
+                    AiProvider.OPENAI to "ChatGPT",
+                    AiProvider.CUSTOM to stringResource(R.string.settings_ai_custom),
+                )
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    providers.forEach { (p, label) ->
+                        FilterChip(
+                            selected = settings.aiProvider == p,
+                            onClick = { repo.settings.update { it.copy(aiProvider = p, aiModel = "") }; aiTest = null },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+                if (settings.aiProvider != AiProvider.NONE) {
+                    if (settings.aiProvider == AiProvider.CUSTOM) {
+                        OutlinedTextField(
+                            settings.aiBaseUrl, { v -> repo.settings.update { it.copy(aiBaseUrl = v) } },
+                            label = { Text(stringResource(R.string.settings_ai_url)) }, singleLine = true,
+                            placeholder = { Text("http://192.168.1.10:11434/v1") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    OutlinedTextField(
+                        settings.aiKey, { v -> repo.settings.update { it.copy(aiKey = v) } },
+                        label = { Text(stringResource(if (settings.aiProvider == AiProvider.CUSTOM) R.string.settings_ai_key_optional else R.string.settings_ai_key)) },
+                        singleLine = true, visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        settings.aiModel, { v -> repo.settings.update { it.copy(aiModel = v) } },
+                        label = { Text(stringResource(R.string.settings_ai_model)) }, singleLine = true,
+                        placeholder = { Text(settings.aiProvider.defaultModel) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    val keyUrl = when (settings.aiProvider) {
+                        AiProvider.CLAUDE -> "https://console.anthropic.com/settings/keys"
+                        AiProvider.GEMINI -> "https://aistudio.google.com/apikey"
+                        AiProvider.OPENAI -> "https://platform.openai.com/api-keys"
+                        else -> "https://ollama.com/search?c=vision"
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(enabled = repo.ai.enabled && !aiTesting, onClick = {
+                            aiTesting = true
+                            scope.launch {
+                                aiTest = try {
+                                    context.getString(R.string.settings_ai_test_ok, repo.ai.test())
+                                } catch (e: Exception) {
+                                    context.errorText(e)
+                                } finally {
+                                    aiTesting = false
+                                }
+                            }
+                        }) { Text(stringResource(R.string.settings_ai_test)) }
+                        TextButton(onClick = { context.openUrl(keyUrl) }) {
+                            Text(stringResource(if (settings.aiProvider == AiProvider.CUSTOM) R.string.settings_ai_models else R.string.settings_ai_get_key))
+                        }
+                    }
+                    if (aiTesting) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    aiTest?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                }
             }
 
             Section(stringResource(R.string.settings_sources)) {
