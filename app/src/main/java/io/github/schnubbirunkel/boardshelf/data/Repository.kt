@@ -583,8 +583,16 @@ class Repository(
     }
 
     /** The cover picture BGG shows for a game (og:image of the public game page). */
-    suspend fun bggPageImage(bggId: Int): String? =
-        runCatching { pageImages("https://boardgamegeek.com/boardgame/$bggId").firstOrNull { "geekdo-images" in it } }.getOrNull()
+    suspend fun bggPageImage(bggId: Int): String? {
+        val url = "https://boardgamegeek.com/boardgame/$bggId"
+        runCatching { pageImages(url).firstOrNull { "geekdo-images" in it } }.getOrNull()?.let { return it }
+        // bot protection answers simple requests with 403 – open the page in an invisible browser instead
+        val viaBrowser = runCatching { pageReader.images(url) }.getOrDefault(emptyList())
+        android.util.Log.i("Boardshelf", "browser $url -> $viaBrowser")
+        return viaBrowser.firstOrNull { "geekdo-images" in it } ?: viaBrowser.firstOrNull()
+    }
+
+    private val pageReader by lazy { io.github.schnubbirunkel.boardshelf.net.WebPageReader(context) }
 
     /** Picture URLs a web page declares for itself (og:image, twitter:image, JSON-LD image). */
     suspend fun pageImages(pageUrl: String): List<String> = withContext(Dispatchers.IO) {
