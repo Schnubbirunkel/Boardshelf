@@ -55,3 +55,12 @@ fun rememberDocumentPicker(mime: Array<String>, onDoc: (Uri) -> Unit): () -> Uni
     }
     return { launcher.launch(mime) }
 }
+
+@Composable
+fun rememberMultiImagePicker(onImages: (List<Uri>) -> Unit): () -> Unit {
+    val callback by rememberUpdatedState(onImages)
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(20)) { uris ->
+        if (uris.isNotEmpty()) callback(uris)
+    }
+    return { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+}

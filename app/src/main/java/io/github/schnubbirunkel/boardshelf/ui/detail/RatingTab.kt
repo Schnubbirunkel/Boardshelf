@@ -13,7 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarOutline
-import androidx.compose.material3.ElevatedCard
+import io.github.schnubbirunkel.boardshelf.ui.theme.GlassCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -42,7 +42,7 @@ import java.util.Locale
 @Composable
 fun RatingTab(g: Game, vm: GameDetailViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        ElevatedCard(Modifier.fillMaxWidth()) {
+        GlassCard(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(stringResource(R.string.rating_overall), style = MaterialTheme.typography.titleMedium)
                 Text(
@@ -59,7 +59,7 @@ fun RatingTab(g: Game, vm: GameDetailViewModel) {
                 }
             }
         }
-        ElevatedCard(Modifier.fillMaxWidth()) {
+        GlassCard(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 AspectRow(R.string.rating_fun, g.ratingFun) { v -> vm.update { it.copy(ratingFun = v) } }
                 AspectRow(R.string.rating_replay, g.ratingReplay) { v -> vm.update { it.copy(ratingReplay = v) } }

@@ -1,7 +1,16 @@
 package io.github.schnubbirunkel.boardshelf.ui.detail
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import io.github.schnubbirunkel.boardshelf.ui.theme.GlassTabs
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,10 +32,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -70,7 +77,7 @@ fun GameDetailScreen(
     fromShelf: Boolean = false,
     onBack: () -> Unit,
     onOpenManual: (Long) -> Unit,
-    onOpenPhoto: (Long) -> Unit,
+    onOpenPhoto: (Long, Int) -> Unit,
     onBrowseManuals: (Long) -> Unit,
     onScanManual: (Long) -> Unit,
     onSearchCover: (Long) -> Unit = {},
@@ -156,7 +163,7 @@ fun GameDetailScreen(
                 Modifier
                     .fillMaxWidth()
                     .height(DETAIL_HEADER_HEIGHT.dp)
-                    .background(Brush.radialGradient(listOf(Color(0xFF34404D), Deco.wall), radius = 900f))
+                    .background(Brush.radialGradient(listOf(Color(0x8034404D), Color.Transparent), radius = 900f))
             ) {
                 Box3DViewer(g, intro = !fromShelf, modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = 24.dp, end = 24.dp, bottom = 8.dp))
             }
@@ -172,13 +179,19 @@ fun GameDetailScreen(
             )
             Spacer(Modifier.height(8.dp))
             val tabs = listOf(R.string.tab_info, R.string.tab_rating, R.string.tab_savestates, R.string.tab_manuals)
-            ScrollableTabRow(selectedTabIndex = tab, containerColor = Color.Transparent, edgePadding = 8.dp) {
-                tabs.forEachIndexed { i, res ->
-                    Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(res)) })
-                }
-            }
-            Box(Modifier.padding(16.dp)) {
-                when (tab) {
+            GlassTabs(tabs.map { stringResource(it) }, tab, { tab = it }, Modifier.padding(horizontal = 16.dp))
+            // tab content slides in the direction of the selected tab (spring, never blocks input)
+            AnimatedContent(
+                targetState = tab,
+                transitionSpec = {
+                    val dir = if (targetState > initialState) 1 else -1
+                    (slideInHorizontally(spring(dampingRatio = 0.9f, stiffness = 420f)) { it / 6 * dir } + fadeIn(tween(180))) togetherWith
+                        fadeOut(tween(120)) using SizeTransform(clip = false)
+                },
+                label = "tab",
+                modifier = Modifier.padding(16.dp),
+            ) { t ->
+                when (t) {
                     0 -> InfoTab(g, vm, onSearchCover = { onSearchCover(g.id) }, onCoverPhoto = coverCamera)
                     1 -> RatingTab(g, vm)
                     2 -> SaveStatesTab(vm, onOpenPhoto)

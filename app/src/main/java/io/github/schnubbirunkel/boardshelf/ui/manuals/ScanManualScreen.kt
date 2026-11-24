@@ -86,6 +86,7 @@ fun ScanManualScreen(gameId: Long, onDone: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = io.github.schnubbirunkel.boardshelf.ui.theme.glassTopBarColors(),
                 title = { Text(stringResource(R.string.manual_scan)) },
                 navigationIcon = { IconButton(onClick = onDone) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) } }
             )

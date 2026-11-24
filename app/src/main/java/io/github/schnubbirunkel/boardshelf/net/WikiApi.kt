@@ -93,6 +93,18 @@ class WikiApi(private val http: OkHttpClient) {
         )
     }
 
+    /** A game whose Wikidata item lists this barcode (GTIN, P3962). */
+    suspend fun byGtin(ean: String): SearchHit? {
+        val res = json("$api?action=query&format=json&list=search&srlimit=1&srsearch=${enc("haswbstatement:P3962=$ean")}")
+        val qid = res.optJSONObject("query")?.optJSONArray("search")?.optJSONObject(0)?.optString("title")
+            ?.takeIf { it.startsWith("Q") } ?: return null
+        val e = getEntities(listOf(qid), "labels|descriptions|claims").optJSONObject(qid) ?: return null
+        return SearchHit(
+            source = Source.WIKIDATA, id = qid, name = text(e, "labels") ?: return null, year = year(e),
+            subtitle = text(e, "descriptions"), bggId = claimString(e, "P2339")?.toIntOrNull(),
+        )
+    }
+
     /** Finds a Wikipedia summary for a game known by its BGG id (P2339). */
     suspend fun summaryForBggId(bggId: Int): Triple<String, String, String?>? {
         val res = json("$api?action=query&format=json&list=search&srlimit=1&srsearch=${enc("haswbstatement:P2339=$bggId")}")

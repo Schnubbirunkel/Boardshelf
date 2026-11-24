@@ -16,6 +16,7 @@
     <string name="action_rename">Umbenennen</string>
     <string name="action_restart">Neu starten</string>
     <string name="action_save">Speichern</string>
+    <string name="action_scan">Scannen</string>
     <string name="action_search">Suchen</string>
     <string name="action_share">Teilen</string>
     <string name="action_show_covers">Cover zeigen</string>
@@ -23,12 +24,22 @@
     <string name="add_importing">Lade Spieldaten…</string>
     <string name="add_manual">Manuell anlegen</string>
     <string name="add_no_results">Keine Spiele gefunden.</string>
-    <string name="add_no_token">Ohne BoardGameGeek-Token sucht die App in Wikidata und Wikipedia. Trage deinen kostenlosen BGG-Token in den Einstellungen ein, um die komplette BGG-Datenbank zu nutzen (Wertungen, Schachtelgrößen, Sammlungsimport).</string>
+    <string name="add_no_token">Gesucht wird in Wikidata und Wikipedia, Cover kommen aus Produktdatenbanken. Tipp: Barcode auf der Schachtel scannen – das findet genau deine Ausgabe samt Cover.</string>
     <string name="add_search_label">Titel suchen (BGG / Wikidata)</string>
     <string name="add_title">Spiel hinzufügen</string>
     <string name="backup_done">Sicherung gespeichert.</string>
     <string name="backup_restart">Die Sicherung wurde wiederhergestellt. Boardshelf muss jetzt neu starten.</string>
     <string name="backup_restored">Sicherung wiederhergestellt</string>
+    <string name="barcode_add_manual">Mit diesem Titel anlegen</string>
+    <string name="barcode_code">Barcode %1$s</string>
+    <string name="barcode_no_match">Kein Spiel gefunden – Titel oben anpassen oder manuell anlegen.</string>
+    <string name="barcode_pick">Welches Spiel ist es?</string>
+    <string name="barcode_rescan">Neu scannen</string>
+    <string name="barcode_scanner_failed">Scanner konnte nicht starten: %1$s</string>
+    <string name="barcode_search_label">Spieltitel</string>
+    <string name="barcode_searching">Suche %1$s …</string>
+    <string name="barcode_title">Barcode scannen</string>
+    <string name="barcode_unknown">Produkt nicht in den Produktdatenbanken gefunden</string>
     <string name="box_age">ab %1$d</string>
     <string name="box_minutes">%1$d Min.</string>
     <string name="box_players">%1$s Spieler</string>
@@ -42,6 +53,8 @@
     <string name="cover_search_term">Brettspiel Schachtel</string>
     <string name="cover_search_title">Cover auswählen</string>
     <string name="cover_source_images">Bildersuche</string>
+    <string name="cover_suggestions">Vorschläge</string>
+    <string name="cover_suggestions_none">Automatisch keine passenden Bilder gefunden – nutze die Websuche unten.</string>
     <string name="cover_use_confirm">Als Cover verwenden</string>
     <string name="cover_use_hint">Nur übernehmen, wenn es die Vorderseite der Schachtel zeigt.</string>
     <string name="cover_use_title">Dieses Bild als Cover verwenden?</string>
@@ -123,6 +136,7 @@
     <string name="savestate_explain">Partie unterbrochen? Fotografiere den Spieltisch und notiere dir, wer dran ist, Punktestände usw.</string>
     <string name="savestate_from_gallery">Aus Galerie</string>
     <string name="savestate_note_hint">Notiz (wer ist dran, Punkte…)</string>
+    <string name="savestate_photo_count">%1$d Fotos</string>
     <string name="savestate_take_photo">Spieltisch fotografieren</string>
     <string name="settings_about">Über</string>
     <string name="settings_backup">Datensicherung</string>
@@ -130,7 +144,7 @@
     <string name="settings_backup_export">Exportieren</string>
     <string name="settings_backup_import">Wiederherstellen</string>
     <string name="settings_bgg">BoardGameGeek</string>
-    <string name="settings_bgg_explain">Seit 2025 verlangt BoardGameGeek für seine Schnittstelle einen kostenlosen Anwendungs-Token. Registriere eine (nicht-kommerzielle) Anwendung und füge den Token hier ein.</string>
+    <string name="settings_bgg_explain">Optional. Boardshelf funktioniert ohne BoardGameGeek (Wikidata, Wikipedia, Produktdatenbanken). Wenn du einen BGG-Anwendungs-Token hast, kannst du ihn hier eintragen – dann kommen BGG-Wertungen, Ränge und Schachtelgrößen dazu.</string>
     <string name="settings_bgg_get_token">Token holen: boardgamegeek.com/applications</string>
     <string name="settings_bgg_token">BGG-Anwendungs-Token</string>
     <string name="settings_bgg_user">BGG-Benutzername (für Sammlungsimport)</string>

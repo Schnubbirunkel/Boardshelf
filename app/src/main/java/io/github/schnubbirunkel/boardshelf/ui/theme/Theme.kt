@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 object Deco {
@@ -33,7 +34,7 @@ private val scheme = darkColorScheme(
     secondaryContainer = Color(0xFF2F3E4E),
     onSecondaryContainer = Color(0xFFD3E4F7),
     tertiary = Color(0xFFFFC845),
-    background = Deco.wall,
+    background = Color.Transparent,
     onBackground = Color(0xFFE6E9ED),
     surface = Color(0xFF1A1F25),
     onSurface = Color(0xFFE6E9ED),
@@ -46,15 +47,26 @@ private val scheme = darkColorScheme(
     outline = Color(0xFF7D8894),
 )
 private val base = Typography()
+// One UI: clean sans-serif, bold large titles
 private val typography = base.copy(
-    headlineSmall = base.headlineSmall.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold),
-    headlineMedium = base.headlineMedium.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold),
-    titleLarge = base.titleLarge.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold),
+    displaySmall = base.displaySmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+    headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.Bold),
+    headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
+    titleLarge = base.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+    titleMedium = base.titleMedium.copy(fontWeight = FontWeight.SemiBold),
 )
 
-val ShelfLabelStyle = TextStyle(fontFamily = FontFamily.Serif, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+private val shapes = androidx.compose.material3.Shapes(
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(26.dp),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
+)
+
+val ShelfLabelStyle = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
 
 @Composable
 fun BoardshelfTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = scheme, typography = typography, content = content)
+    MaterialTheme(colorScheme = scheme, typography = typography, shapes = shapes, content = content)
 }

@@ -87,6 +87,7 @@ fun ManualBrowserScreen(gameId: Long, onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
+                colors = io.github.schnubbirunkel.boardshelf.ui.theme.glassTopBarColors(),
                 title = {
                     Column {
                         Text(stringResource(R.string.browser_title), style = MaterialTheme.typography.titleMedium)

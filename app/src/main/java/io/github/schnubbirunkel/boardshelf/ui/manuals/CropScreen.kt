@@ -110,6 +110,7 @@ fun CropScreen(gameId: Long, path: String, onDone: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = io.github.schnubbirunkel.boardshelf.ui.theme.glassTopBarColors(),
                 title = { Text(stringResource(R.string.crop_title)) },
                 navigationIcon = { IconButton(onClick = { source.delete(); onDone() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) } },
                 actions = {

@@ -81,12 +81,17 @@ object DemoData {
         if (firstId > 0) {
             val table = File(context.cacheDir, "demo_table.jpg")
             table.outputStream().use { tableArt().compress(Bitmap.CompressFormat.JPEG, 90, it) }
-            repo.addSaveState(firstId, table, context.getString(R.string.demo_savestate_title), context.getString(R.string.demo_savestate_note))
+            val detail = File(context.cacheDir, "demo_table2.jpg")
+            detail.outputStream().use { o ->
+                val full = tableArt()
+                Bitmap.createBitmap(full, 700, 400, 900, 675).compress(Bitmap.CompressFormat.JPEG, 90, o)
+            }
+            repo.addSaveState(firstId, listOf(table, detail), emptyList(), context.getString(R.string.demo_savestate_title), context.getString(R.string.demo_savestate_note))
             val pages = (1..3).map { p ->
                 File(context.cacheDir, "demo_page_$p.jpg").also { f -> f.outputStream().use { pageArt(p).compress(Bitmap.CompressFormat.JPEG, 90, it) } }
             }
             repo.addScannedManual(firstId, context.getString(R.string.manual_scan_default_title, demos[0].name), pages)
-            pages.forEach { it.delete() }; table.delete()
+            pages.forEach { it.delete() }; table.delete(); detail.delete()
         }
     }
 

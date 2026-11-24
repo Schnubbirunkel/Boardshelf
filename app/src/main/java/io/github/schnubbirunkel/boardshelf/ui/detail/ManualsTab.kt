@@ -18,7 +18,7 @@ import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
+import io.github.schnubbirunkel.boardshelf.ui.theme.GlassCard
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,7 +67,7 @@ fun ManualsTab(g: Game, vm: GameDetailViewModel, onOpen: (Long) -> Unit, onBrows
             Text(stringResource(R.string.manual_empty), style = MaterialTheme.typography.bodyMedium)
         }
         manuals.forEach { m ->
-            ElevatedCard {
+            GlassCard {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier.clickable { onOpen(m.id) },

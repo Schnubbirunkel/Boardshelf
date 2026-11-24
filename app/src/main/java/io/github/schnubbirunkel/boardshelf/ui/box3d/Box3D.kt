@@ -124,7 +124,7 @@ fun Box3DViewer(game: Game, modifier: Modifier = Modifier, intro: Boolean = true
                     change.consume()
                     tracker.addPosition(change.uptimeMillis, change.position)
                     yaw += drag.x * 0.35f
-                    pitch = (pitch - drag.y * 0.3f).coerceIn(-85f, 85f)
+                    pitch = (pitch + drag.y * 0.3f).coerceIn(-85f, 85f)
                 }
             }
     ) {

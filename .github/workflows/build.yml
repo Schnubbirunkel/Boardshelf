@@ -44,6 +44,7 @@ jobs:
 
       - name: Build APKs
         env:
+          BGG_TOKEN: ${{ secrets.BGG_TOKEN }}
           BOARDSHELF_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           BOARDSHELF_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           BOARDSHELF_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}

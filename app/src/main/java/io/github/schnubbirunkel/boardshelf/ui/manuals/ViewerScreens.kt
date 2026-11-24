@@ -143,12 +143,14 @@ fun ManualViewerScreen(manualId: Long, onBack: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun PhotoViewerScreen(saveStateId: Long, onBack: () -> Unit) {
+fun PhotoViewerScreen(saveStateId: Long, startIndex: Int, onBack: () -> Unit) {
     val repo = LocalContext.current.app().repository
     val state by produceState<SaveState?>(null, saveStateId) { value = repo.saveState(saveStateId) }
-    val zoom = remember { ZoomState() }
+    val photos by produceState<List<String>>(emptyList(), saveStateId) {
+        value = repo.photosOf(saveStateId).map { it.path }.ifEmpty { listOfNotNull(repo.saveState(saveStateId)?.photoPath) }
+    }
     Scaffold(
         containerColor = Color.Black,
         topBar = {
@@ -165,17 +167,19 @@ fun PhotoViewerScreen(saveStateId: Long, onBack: () -> Unit) {
         }
     ) { padding ->
         val s = state ?: return@Scaffold
+        if (photos.isEmpty()) return@Scaffold
+        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = startIndex.coerceIn(0, photos.lastIndex)) { photos.size }
         Box(Modifier.fillMaxSize().padding(padding)) {
-            AsyncImage(
-                repo.files.resolve(s.photoPath), s.title,
-                Modifier.fillMaxSize().zoomable(zoom), contentScale = ContentScale.Fit
-            )
-            s.note?.let {
-                Text(
-                    it, color = Color.White,
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                        .background(Color(0xAA000000)).padding(16.dp)
+            androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.fillMaxSize()) { page ->
+                val zoom = remember(page) { ZoomState() }
+                AsyncImage(
+                    repo.files.resolve(photos[page]), s.title,
+                    Modifier.fillMaxSize().zoomable(zoom), contentScale = ContentScale.Fit
                 )
+            }
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color(0xAA000000)).padding(16.dp)) {
+                if (photos.size > 1) Text("${pager.currentPage + 1} / ${photos.size}", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                s.note?.let { Text(it, color = Color.White) }
             }
         }
     }

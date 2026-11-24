@@ -21,6 +21,8 @@ data class Shelf(
 data class Game(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val bggId: Int? = null,
+    /** EAN/UPC barcode of the box, if scanned. */
+    val ean: String? = null,
     val wikidataId: String? = null,
     val name: String,
     val year: Int? = null,
@@ -82,6 +84,22 @@ data class SaveState(
     val note: String? = null,
     val photoPath: String,
     val createdAt: Long = System.currentTimeMillis(),
+)
+
+/** One photo of a save state (a save state can have several). */
+@Entity(
+    tableName = "save_state_photos",
+    foreignKeys = [ForeignKey(
+        entity = SaveState::class, parentColumns = ["id"], childColumns = ["saveStateId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index("saveStateId")]
+)
+data class SaveStatePhoto(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val saveStateId: Long,
+    val path: String,
+    val position: Int,
 )
 
 object ManualKind {

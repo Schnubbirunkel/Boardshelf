@@ -16,6 +16,7 @@
     <string name="action_rename">Rename</string>
     <string name="action_restart">Restart</string>
     <string name="action_save">Save</string>
+    <string name="action_scan">Scan</string>
     <string name="action_search">Search</string>
     <string name="action_share">Share</string>
     <string name="action_show_covers">Show covers</string>
@@ -23,13 +24,23 @@
     <string name="add_importing">Fetching game data…</string>
     <string name="add_manual">Add manually</string>
     <string name="add_no_results">No games found.</string>
-    <string name="add_no_token">Without a BoardGameGeek token the search uses Wikidata and Wikipedia. Add your free BGG token in the settings for the full BGG database (ratings, box sizes, collection import).</string>
+    <string name="add_no_token">The search uses Wikidata and Wikipedia; covers come from product databases. Tip: scan the barcode on the box – that finds the exact edition and its cover.</string>
     <string name="add_search_label">Search title (BGG / Wikidata)</string>
     <string name="add_title">Add game</string>
     <string name="app_name" translatable="false">Boardshelf</string>
     <string name="backup_done">Backup saved.</string>
     <string name="backup_restart">The backup was restored. Boardshelf needs to restart now.</string>
     <string name="backup_restored">Backup restored</string>
+    <string name="barcode_add_manual">Add with this title</string>
+    <string name="barcode_code">Barcode %1$s</string>
+    <string name="barcode_no_match">No game found – correct the title above or add it manually.</string>
+    <string name="barcode_pick">Which game is it?</string>
+    <string name="barcode_rescan">Scan again</string>
+    <string name="barcode_scanner_failed">Scanner could not start: %1$s</string>
+    <string name="barcode_search_label">Game title</string>
+    <string name="barcode_searching">Looking up %1$s …</string>
+    <string name="barcode_title">Scan barcode</string>
+    <string name="barcode_unknown">Product not found in the product databases</string>
     <string name="box_age">%1$d+</string>
     <string name="box_minutes">%1$d min</string>
     <string name="box_players">%1$s players</string>
@@ -43,6 +54,8 @@
     <string name="cover_search_term">board game box</string>
     <string name="cover_search_title">Choose cover</string>
     <string name="cover_source_images">Image search</string>
+    <string name="cover_suggestions">Suggestions</string>
+    <string name="cover_suggestions_none">No matching pictures found automatically – use the web search below.</string>
     <string name="cover_use_confirm">Use as cover</string>
     <string name="cover_use_hint">Only use it if it shows the front of the box.</string>
     <string name="cover_use_title">Use this picture as cover?</string>
@@ -124,6 +137,7 @@
     <string name="savestate_explain">Have to stop in the middle of a game? Take a photo of the table and add a note (whose turn, scores…).</string>
     <string name="savestate_from_gallery">From gallery</string>
     <string name="savestate_note_hint">Note (whose turn, scores…)</string>
+    <string name="savestate_photo_count">%1$d photos</string>
     <string name="savestate_take_photo">Photograph table</string>
     <string name="settings_about">About</string>
     <string name="settings_backup">Backup</string>
@@ -131,7 +145,7 @@
     <string name="settings_backup_export">Export</string>
     <string name="settings_backup_import">Restore</string>
     <string name="settings_bgg">BoardGameGeek</string>
-    <string name="settings_bgg_explain">Since 2025 BoardGameGeek requires a free application token for its API. Register an application (non-commercial) and paste the token here.</string>
+    <string name="settings_bgg_explain">Optional. Boardshelf works without BoardGameGeek (Wikidata, Wikipedia, product databases). If you have a BGG application token you can add it here for BGG ratings, ranks and box sizes.</string>
     <string name="settings_bgg_get_token">Get a token at boardgamegeek.com/applications</string>
     <string name="settings_bgg_token">BGG application token</string>
     <string name="settings_bgg_user">BGG username (for collection import)</string>

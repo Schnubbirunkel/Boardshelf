@@ -49,6 +49,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import io.github.schnubbirunkel.boardshelf.ui.theme.bouncyClick
+import io.github.schnubbirunkel.boardshelf.ui.theme.glass
 import coil.request.ImageRequest
 import io.github.schnubbirunkel.boardshelf.R
 import io.github.schnubbirunkel.boardshelf.data.Game
@@ -105,6 +110,7 @@ fun CoverSearchScreen(gameId: Long, onDone: () -> Unit, onPicked: (String) -> Un
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
+                colors = io.github.schnubbirunkel.boardshelf.ui.theme.glassTopBarColors(),
                 title = {
                     Column {
                         Text(stringResource(R.string.cover_search_title), style = MaterialTheme.typography.titleMedium)
@@ -126,6 +132,40 @@ fun CoverSearchScreen(gameId: Long, onDone: () -> Unit, onPicked: (String) -> Un
                         onClick = { selectedSource = i; webView?.loadUrl(url) },
                         label = { Text(label) }
                     )
+                }
+            }
+            // automatic suggestions from the key-less sources (best first)
+            if (g != null) {
+                val candidates by produceState<List<io.github.schnubbirunkel.boardshelf.net.CoverCandidate>?>(null, g.id) {
+                    value = runCatching { repo.coverCandidates(g) }.getOrDefault(emptyList())
+                }
+                Text(
+                    stringResource(R.string.cover_suggestions), style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(start = 12.dp, top = 6.dp)
+                )
+                when (val c = candidates) {
+                    null -> LinearProgressIndicator(Modifier.fillMaxWidth().padding(12.dp))
+                    else -> if (c.isEmpty()) Text(
+                        stringResource(R.string.cover_suggestions_none), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 12.dp)
+                    ) else androidx.compose.foundation.lazy.LazyRow(
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(c.size) { i ->
+                            val cand = c[i]
+                            Column(
+                                Modifier.width(112.dp).bouncyClick { picked = cand.url },
+                                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                            ) {
+                                AsyncImage(
+                                    cand.url, cand.label, contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(112.dp).glass(RoundedCornerShape(18.dp))
+                                )
+                                Text(cand.source, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                            }
+                        }
+                    }
                 }
             }
             Text(

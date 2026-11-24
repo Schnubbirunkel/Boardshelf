@@ -32,6 +32,7 @@ class Repository(
     val http: OkHttpClient,
     val bgg: BggApi,
     val wiki: WikiApi,
+    val products: io.github.schnubbirunkel.boardshelf.net.ProductApi,
     val settings: SettingsStore,
 ) {
     val games: Flow<List<Game>> = db.games().observeAll()
@@ -106,8 +107,8 @@ class Repository(
 
     suspend fun search(query: String): SearchResult = coroutineScope {
         val s = settings.current
-        val bggJob = if (s.bggToken.isNotBlank()) async { runCatching { bgg.search(query) } } else null
-        val wikiJob = if (s.useWikidata || s.bggToken.isBlank()) async { runCatching { wiki.search(query) } } else null
+        val bggJob = if (bgg.hasToken) async { runCatching { bgg.search(query) } } else null
+        val wikiJob = if (s.useWikidata || !bgg.hasToken) async { runCatching { wiki.search(query) } } else null
         val bggRes = bggJob?.await()
         val wikiRes = wikiJob?.await()
         val bggHits = bggRes?.getOrNull().orEmpty()
@@ -129,7 +130,7 @@ class Repository(
     }
 
     private suspend fun loadInfo(hit: SearchHit): GameInfo {
-        val hasToken = settings.current.bggToken.isNotBlank()
+        val hasToken = bgg.hasToken
         return when (hit.source) {
             Source.BGG -> enrichWithWiki(bgg.details(hit.id.toInt()))
             Source.WIKIDATA -> {
@@ -159,6 +160,9 @@ class Repository(
             .copy(myRating = userRating?.coerceIn(0f, 10f) ?: 0f)
         val id = db.games().insert(game)
         info.imageUrl?.let { downloadCover(id, it) }
+        if (db.games().get(id)?.coverPath == null && info.publishers.none { it == "Boardshelf Demo" }) {
+            runCatching { autoCover(id) }
+        }
         return id
     }
 
@@ -192,7 +196,7 @@ class Repository(
     suspend fun refreshFromSources(gameId: Long) {
         val g = db.games().get(gameId) ?: return
         val info = when {
-            g.bggId != null && settings.current.bggToken.isNotBlank() -> enrichWithWiki(bgg.details(g.bggId))
+            g.bggId != null && bgg.hasToken -> enrichWithWiki(bgg.details(g.bggId))
             g.wikidataId != null -> wiki.details(g.wikidataId)
             else -> throw IOException("No online source linked")
         }
@@ -269,10 +273,84 @@ class Repository(
         insertFromInfo(GameInfo(name = name))
 
     suspend fun deleteGame(game: Game) = withContext(Dispatchers.IO) {
-        db.saveStates().forGame(game.id).forEach { files.deleteRelative(it.photoPath) }
+        db.saveStates().forGame(game.id).forEach { st ->
+            db.saveStatePhotos().forState(st.id).forEach { files.deleteRelative(it.path) }
+            files.deleteRelative(st.photoPath)
+        }
         db.manuals().forGame(game.id).forEach { files.deleteRelative(it.path) }
         files.deleteRelative(game.coverPath)
         db.games().delete(game)
+    }
+
+    // ---------------------------------------------------------------- barcode & covers
+
+    data class BarcodeResult(
+        val ean: String,
+        val existing: Game?,
+        val products: List<io.github.schnubbirunkel.boardshelf.net.Product>,
+        val query: String?,
+        val hits: List<SearchHit>,
+    )
+
+    /** Barcode → product databases → probable title → game search (Wikidata GTIN first). */
+    suspend fun lookupBarcode(code: String): BarcodeResult = coroutineScope {
+        val ean = code.filter { it.isDigit() }
+        db.games().byEan(ean)?.let { return@coroutineScope BarcodeResult(ean, it, emptyList(), null, emptyList()) }
+        val gtinHit = async { runCatching { wiki.byGtin(ean) }.getOrNull() }
+        val products = runCatching { products.byBarcode(ean) }.getOrDefault(emptyList())
+        val query = products.firstOrNull()?.let { io.github.schnubbirunkel.boardshelf.net.ProductApi.cleanTitle(it.title, it.brand) }
+        val found = if (query != null) search(query).hits else emptyList()
+        val hits = (listOfNotNull(gtinHit.await()) + found).distinctBy { it.source.name + it.id }
+        BarcodeResult(ean, null, products, query, hits)
+    }
+
+    /** Imports a hit found via barcode: remembers the EAN and uses the shop picture of exactly this box as cover. */
+    suspend fun importFromBarcode(hit: SearchHit?, result: BarcodeResult, manualName: String? = null): Long {
+        val id = if (hit != null) importHit(hit) else createManualGame(manualName ?: result.query ?: result.ean)
+        db.games().get(id)?.let { g -> if (g.ean == null) db.games().update(g.copy(ean = result.ean)) }
+        val g = db.games().get(id) ?: return id
+        if (g.coverPath == null) {
+            for (url in result.products.flatMap { it.images }.distinct()) {
+                if (trySetCover(id, url)) break
+            }
+        }
+        return id
+    }
+
+    private suspend fun trySetCover(gameId: Long, url: String): Boolean = try {
+        val f = downloadCoverCandidate(url, emptyMap())
+        setCoverFromFile(gameId, f)
+        f.delete()
+        true
+    } catch (e: Exception) {
+        false
+    }
+
+    /** Cover suggestions from all key-less sources, best first. */
+    suspend fun coverCandidates(game: Game): List<io.github.schnubbirunkel.boardshelf.net.CoverCandidate> = coroutineScope {
+        val P = io.github.schnubbirunkel.boardshelf.net.ProductApi
+        val out = mutableListOf<io.github.schnubbirunkel.boardshelf.net.CoverCandidate>()
+        val byEan = game.ean?.let { e -> async { runCatching { products.byBarcode(e) }.getOrDefault(emptyList()) } }
+        val byName = async { runCatching { products.searchProducts(game.name) }.getOrDefault(emptyList()) }
+        val fromBgg = if (game.bggId != null && bgg.hasToken) async { runCatching { bgg.details(game.bggId).imageUrl }.getOrNull() } else null
+        fromBgg?.await()?.let { out += io.github.schnubbirunkel.boardshelf.net.CoverCandidate(it, "BoardGameGeek", game.name, 100) }
+        byEan?.await()?.forEach { p -> p.images.forEach { out += io.github.schnubbirunkel.boardshelf.net.CoverCandidate(it, p.source, p.title, 90) } }
+        byName.await().forEach { p ->
+            val sc = P.score(p, game.name, game.publishers)
+            if (sc > 0) p.images.forEach { out += io.github.schnubbirunkel.boardshelf.net.CoverCandidate(it, p.source, p.title, sc) }
+        }
+        game.imageUrl?.let { out += io.github.schnubbirunkel.boardshelf.net.CoverCandidate(it, "Wikimedia", game.name, 40) }
+        out.distinctBy { it.url }.sortedByDescending { it.score }
+    }
+
+    /** Sets a cover automatically only when a candidate is very likely the right box. */
+    suspend fun autoCover(gameId: Long): Boolean {
+        val g = db.games().get(gameId) ?: return false
+        if (g.coverPath != null) return true
+        for (c in coverCandidates(g).filter { it.score >= 75 }.take(4)) {
+            if (trySetCover(gameId, c.url)) return true
+        }
+        return false
     }
 
     // ---------------------------------------------------------------- BGG collection import
@@ -300,25 +378,60 @@ class Repository(
 
     // ---------------------------------------------------------------- save states
 
-    suspend fun addSaveState(gameId: Long, photo: File, title: String, note: String?): Long = withContext(Dispatchers.IO) {
+    fun saveStatePhotos(gameId: Long): Flow<List<SaveStatePhoto>> = db.saveStatePhotos().observeForGame(gameId)
+    suspend fun photosOf(stateId: Long): List<SaveStatePhoto> = db.saveStatePhotos().forState(stateId)
+
+    /** Stores a photo (camera file or gallery uri) as JPEG and returns the relative path. */
+    private suspend fun storePhoto(file: File?, uri: Uri?): String = withContext(Dispatchers.IO) {
         val target = files.newFile("savestates", "jpg")
-        Images.saveScaledJpeg(photo, target)
-        db.saveStates().insert(SaveState(gameId = gameId, title = title, note = note?.takeIf { it.isNotBlank() }, photoPath = files.relative(target)))
+        if (file != null) Images.saveScaledJpeg(file, target)
+        else {
+            val tmp = File(context.cacheDir, "import_${UUID.randomUUID()}.jpg")
+            try {
+                files.copyUriTo(uri!!, tmp); Images.saveScaledJpeg(tmp, target)
+            } finally {
+                tmp.delete()
+            }
+        }
+        files.relative(target)
     }
 
-    suspend fun addSaveStateFromUri(gameId: Long, uri: Uri, title: String, note: String?): Long = withContext(Dispatchers.IO) {
-        val tmp = File(context.cacheDir, "import_${UUID.randomUUID()}.jpg")
-        try {
-            files.copyUriTo(uri, tmp)
-            addSaveState(gameId, tmp, title, note)
-        } finally {
-            tmp.delete()
+    /** A save state with one or more photos of the table. */
+    suspend fun addSaveState(gameId: Long, photos: List<File>, uris: List<Uri>, title: String, note: String?): Long = withContext(Dispatchers.IO) {
+        val paths = photos.map { storePhoto(it, null) } + uris.map { storePhoto(null, it) }
+        require(paths.isNotEmpty())
+        val id = db.saveStates().insert(SaveState(gameId = gameId, title = title, note = note?.takeIf { it.isNotBlank() }, photoPath = paths.first()))
+        paths.forEachIndexed { i, p -> db.saveStatePhotos().insert(SaveStatePhoto(saveStateId = id, path = p, position = i)) }
+        photos.forEach { it.delete() }
+        id
+    }
+
+    suspend fun addSaveState(gameId: Long, photo: File, title: String, note: String?): Long =
+        addSaveState(gameId, listOf(photo), emptyList(), title, note)
+
+    suspend fun addPhotos(stateId: Long, photos: List<File>, uris: List<Uri>) = withContext(Dispatchers.IO) {
+        var pos = (db.saveStatePhotos().forState(stateId).maxOfOrNull { it.position } ?: -1) + 1
+        (photos.map { storePhoto(it, null) } + uris.map { storePhoto(null, it) }).forEach { p ->
+            db.saveStatePhotos().insert(SaveStatePhoto(saveStateId = stateId, path = p, position = pos++))
         }
+        photos.forEach { it.delete() }
+    }
+
+    /** Removes one photo; the state's main photo follows the first remaining one. Last photo → state is deleted. */
+    suspend fun deletePhoto(photo: SaveStatePhoto) = withContext(Dispatchers.IO) {
+        val state = db.saveStates().get(photo.saveStateId) ?: return@withContext
+        val rest = db.saveStatePhotos().forState(state.id).filter { it.id != photo.id }
+        if (rest.isEmpty()) { deleteSaveState(state); return@withContext }
+        files.deleteRelative(photo.path)
+        db.saveStatePhotos().delete(photo)
+        db.saveStatePhotos().updateAll(rest.mapIndexed { i, p -> p.copy(position = i) })
+        db.saveStates().update(state.copy(photoPath = rest.first().path))
     }
 
     suspend fun updateSaveState(state: SaveState) = db.saveStates().update(state)
 
     suspend fun deleteSaveState(state: SaveState) = withContext(Dispatchers.IO) {
+        db.saveStatePhotos().forState(state.id).forEach { files.deleteRelative(it.path) }
         files.deleteRelative(state.photoPath)
         db.saveStates().delete(state)
     }

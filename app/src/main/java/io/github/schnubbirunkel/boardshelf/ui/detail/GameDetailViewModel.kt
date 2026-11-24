@@ -25,6 +25,7 @@ sealed interface DetailEvent {
 class GameDetailViewModel(val repo: Repository, val gameId: Long) : ViewModel() {
     val game = repo.game(gameId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), repo.handover.remove(gameId))
     val saveStates = repo.saveStates(gameId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val photos = repo.saveStatePhotos(gameId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val manuals = repo.manuals(gameId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val shelves = repo.shelves.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val busy = MutableStateFlow(false)
@@ -74,11 +75,12 @@ class GameDetailViewModel(val repo: Repository, val gameId: Long) : ViewModel() 
         }
     }
 
-    fun addSaveState(file: File, title: String, note: String) = task {
-        repo.addSaveState(gameId, file, title, note); file.delete()
+    fun addSaveState(files: List<File>, uris: List<Uri>, title: String, note: String) = task {
+        repo.addSaveState(gameId, files, uris, title, note)
     }
 
-    fun addSaveStateUri(uri: Uri, title: String, note: String) = task { repo.addSaveStateFromUri(gameId, uri, title, note) }
+    fun addPhotos(stateId: Long, files: List<File>, uris: List<Uri>) = task { repo.addPhotos(stateId, files, uris) }
+    fun deletePhoto(p: io.github.schnubbirunkel.boardshelf.data.SaveStatePhoto) = task { repo.deletePhoto(p) }
     fun updateSaveState(s: SaveState) = task { repo.updateSaveState(s) }
     fun deleteSaveState(s: SaveState) = task { repo.deleteSaveState(s) }
 

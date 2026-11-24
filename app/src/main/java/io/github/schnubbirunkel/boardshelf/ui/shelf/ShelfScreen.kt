@@ -1,6 +1,16 @@
 package io.github.schnubbirunkel.boardshelf.ui.shelf
 
 import androidx.compose.animation.core.animateIntOffsetAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import io.github.schnubbirunkel.boardshelf.ui.theme.GlassCard
+import io.github.schnubbirunkel.boardshelf.ui.theme.bouncyClick
+import io.github.schnubbirunkel.boardshelf.ui.theme.glass
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -30,7 +40,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
@@ -116,6 +125,7 @@ class ShelfViewModel(private val repo: Repository) : ViewModel() {
 fun ShelfScreen(
     onOpenGame: (Long) -> Unit,
     onAdd: () -> Unit,
+    onScan: () -> Unit,
     onSettings: () -> Unit,
     onManageShelves: () -> Unit,
 ) {
@@ -125,13 +135,19 @@ fun ShelfScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var menu by remember { mutableStateOf(false) }
     var opening by remember { mutableStateOf<Opening?>(null) }
+    val scroll = rememberScrollState()
+    val density = LocalDensity.current
+    val headerPx = with(density) { HEADER_HEIGHT.toPx() }
+    // One UI: the big title scrolls away, the small bar title fades in
+    val collapse = (scroll.value / headerPx).coerceIn(0f, 1f)
+    val barTint by animateColorAsState(if (collapse > 0.95f || searching) Color(0xE6161A20) else Color.Transparent, label = "bar")
 
     Box(Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = Deco.wall,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Deco.wallLight),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = barTint),
                 title = {
                     if (searching) {
                         TextField(
@@ -145,22 +161,11 @@ fun ShelfScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
-                        Column {
-                            Text(stringResource(R.string.app_name))
-                            state?.let {
-                                Text(
-                                    stringResource(R.string.shelf_count, it.games.size),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        Text(stringResource(R.string.app_name), modifier = Modifier.alpha(collapse))
                     }
                 },
                 actions = {
-                    IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
-                        Icon(if (searching) Icons.Default.Close else Icons.Default.Search, stringResource(R.string.action_search))
-                    }
+                    if (searching) IconButton(onClick = { searching = false; query = "" }) { Icon(Icons.Default.Close, stringResource(R.string.action_close)) }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -171,11 +176,12 @@ fun ShelfScreen(
                 }
             )
         },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAdd,
-                icon = { Icon(Icons.Default.Add, null) },
-                text = { Text(stringResource(R.string.action_add_game)) },
+        bottomBar = {
+            GlassActionBar(
+                onSearch = { searching = !searching; if (!searching) query = "" },
+                onScan = onScan,
+                onAdd = onAdd,
+                searching = searching,
             )
         }
     ) { padding ->
@@ -185,14 +191,26 @@ fun ShelfScreen(
                 shelves = st.shelves, games = st.games, spineMode = true, query = query,
                 hiddenId = opening?.game?.id,
                 onOpen = { id, rect -> if (opening == null) st.games.firstOrNull { it.id == id }?.let { vm.handover(it); opening = Opening(it, rect) } },
-                onOrder = vm::applyOrder, padding = padding
+                onOrder = vm::applyOrder, padding = padding, scroll = scroll,
+                header = {
+                    Column(Modifier.padding(start = 24.dp, end = 24.dp).alpha(1f - collapse)) {
+                        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            stringResource(R.string.shelf_count, st.games.size),
+                            style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
             )
             if (st.games.isEmpty()) {
-                ElevatedCard(Modifier.align(Alignment.Center).padding(32.dp)) {
+                GlassCard(Modifier.align(Alignment.Center).padding(32.dp)) {
                     Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(stringResource(R.string.shelf_empty_title), style = MaterialTheme.typography.titleLarge)
                         Text(stringResource(R.string.shelf_empty_text), style = MaterialTheme.typography.bodyMedium)
-                        FilledTonalButton(onClick = onAdd) { Text(stringResource(R.string.action_add_game)) }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilledTonalButton(onClick = onScan) { Text(stringResource(R.string.action_scan)) }
+                            FilledTonalButton(onClick = onAdd) { Text(stringResource(R.string.action_add_game)) }
+                        }
                     }
                 }
             }
@@ -201,6 +219,57 @@ fun ShelfScreen(
     opening?.let { o ->
         OpeningOverlay(o, onFinished = { onOpenGame(o.game.id) }, onReset = { opening = null })
     }
+    }
+}
+
+private val HEADER_HEIGHT = 96.dp
+
+/** Floating glass pill at the bottom (One UI / Liquid Glass): search, scan, add. */
+@Composable
+private fun GlassActionBar(onSearch: () -> Unit, onScan: () -> Unit, onAdd: () -> Unit, searching: Boolean) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .height(64.dp)
+            .clip(RoundedCornerShape(32.dp))
+            .background(Color(0xF0161A20))
+            .glass(RoundedCornerShape(32.dp), 1.3f)
+            .padding(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BarButton(Icons.Default.Search, stringResource(R.string.action_search), selected = searching, modifier = Modifier.weight(1f), onClick = onSearch)
+        BarButton(Icons.Default.QrCodeScanner, stringResource(R.string.action_scan), modifier = Modifier.weight(1f), onClick = onScan)
+        BarButton(Icons.Default.Add, stringResource(R.string.action_add_game), primary = true, modifier = Modifier.weight(1.3f), onClick = onAdd)
+    }
+}
+
+@Composable
+private fun BarButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, modifier: Modifier,
+    selected: Boolean = false, primary: Boolean = false, onClick: () -> Unit,
+) {
+    val bg by animateColorAsState(
+        when {
+            primary -> MaterialTheme.colorScheme.primary
+            selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+            else -> Color.Transparent
+        }, label = "barBg"
+    )
+    val fg = if (primary) MaterialTheme.colorScheme.onPrimary else if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    Row(
+        modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(26.dp))
+            .background(bg)
+            .bouncyClick(onClick = onClick),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = fg, modifier = Modifier.size(20.dp))
+        Text(" $label", color = fg, style = MaterialTheme.typography.labelLarge, maxLines = 1)
     }
 }
 
@@ -226,17 +295,18 @@ private fun ShelfWall(
     onOpen: (Long, Rect) -> Unit,
     onOrder: (Map<Long, List<Long>>) -> Unit,
     padding: PaddingValues,
+    scroll: androidx.compose.foundation.ScrollState,
+    header: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     BoxWithConstraints(
-        Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Deco.wallLight, Deco.wall)))
+        Modifier.fillMaxSize()
     ) {
         val widthPx = constraints.maxWidth.toFloat()
         val viewportH = constraints.maxHeight.toFloat()
-        val topPx = with(density) { padding.calculateTopPadding().toPx() }
+        val barPx = with(density) { padding.calculateTopPadding().toPx() }
+        val topPx = barPx + with(density) { HEADER_HEIGHT.toPx() }
         val bottomPx = with(density) { padding.calculateBottomPadding().toPx() + 88.dp.toPx() }
         val dims = remember(density, widthPx, topPx, bottomPx) { ShelfDims(density, widthPx, topPx, bottomPx) }
         val gamesById = remember(games) { games.associateBy { it.id } }
@@ -253,7 +323,6 @@ private fun ShelfWall(
         val layout = remember(shelves, displayOrder, gamesById, dims, spineMode) {
             computeLayout(shelves, displayOrder, gamesById, dims, spineMode)
         }
-        val scroll = rememberScrollState()
         val origin = remember { FloatArray(2) }
         val currentLayout by rememberUpdatedState(layout)
         val currentOrder by rememberUpdatedState(order)
@@ -338,6 +407,7 @@ private fun ShelfWall(
                     }
             ) {
                 Canvas(Modifier.fillMaxSize()) { drawShelf(layout, dims) }
+                Box(Modifier.offset { IntOffset(0, barPx.roundToInt()) }) { header() }
 
                 // shelf labels on the boards
                 layout.shelves.forEach { sp ->

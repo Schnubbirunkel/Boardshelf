@@ -26,7 +26,8 @@ class BoardshelfApp : Application() {
             db = AppDatabase.create(this),
             files = files,
             http = http,
-            bgg = BggApi(http) { settings.current.bggToken },
+            bgg = BggApi(http) { settings.current.bggToken.ifBlank { BuildConfig.BGG_TOKEN } },
+            products = io.github.schnubbirunkel.boardshelf.net.ProductApi(http),
             wiki = WikiApi(http),
             settings = settings,
         )

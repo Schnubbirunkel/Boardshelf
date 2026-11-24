@@ -25,7 +25,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
+import io.github.schnubbirunkel.boardshelf.ui.theme.GlassCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -63,7 +63,7 @@ fun InfoTab(g: Game, vm: GameDetailViewModel, onSearchCover: () -> Unit, onCover
     val shelves by vm.shelves.collectAsState()
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (g.coverPath == null) {
-            ElevatedCard(Modifier.fillMaxWidth()) {
+            GlassCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.cover_missing), style = MaterialTheme.typography.bodyMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -108,7 +108,7 @@ fun InfoTab(g: Game, vm: GameDetailViewModel, onSearchCover: () -> Unit, onCover
 
         g.description?.let { desc ->
             var expanded by remember { mutableStateOf(false) }
-            ElevatedCard(Modifier.fillMaxWidth().animateContentSize().clickable { expanded = !expanded }) {
+            GlassCard(Modifier.fillMaxWidth().animateContentSize().clickable { expanded = !expanded }) {
                 Column(Modifier.padding(14.dp)) {
                     Text(stringResource(R.string.info_description), style = MaterialTheme.typography.titleSmall)
                     Text(
@@ -121,7 +121,7 @@ fun InfoTab(g: Game, vm: GameDetailViewModel, onSearchCover: () -> Unit, onCover
         }
 
         if (g.wikiExtract != null && g.wikiExtract != g.description) {
-            ElevatedCard(Modifier.fillMaxWidth()) {
+            GlassCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp)) {
                     Text("Wikipedia", style = MaterialTheme.typography.titleSmall)
                     Text(g.wikiExtract, style = MaterialTheme.typography.bodyMedium)

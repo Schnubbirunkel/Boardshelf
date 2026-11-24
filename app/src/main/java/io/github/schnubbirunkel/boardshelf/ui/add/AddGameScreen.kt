@@ -18,10 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
+import io.github.schnubbirunkel.boardshelf.ui.theme.GlassCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,6 +60,8 @@ import io.github.schnubbirunkel.boardshelf.net.SearchHit
 import io.github.schnubbirunkel.boardshelf.net.Source
 import io.github.schnubbirunkel.boardshelf.ui.appViewModel
 import io.github.schnubbirunkel.boardshelf.ui.errorText
+import io.github.schnubbirunkel.boardshelf.ui.theme.bouncyClick
+import io.github.schnubbirunkel.boardshelf.ui.theme.glass
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -77,7 +80,7 @@ data class AddUiState(
 class AddGameViewModel(private val repo: Repository) : ViewModel() {
     private val _state = MutableStateFlow(AddUiState())
     val state = _state.asStateFlow()
-    val hasToken get() = repo.settings.current.bggToken.isNotBlank()
+    val hasToken get() = repo.bgg.hasToken
 
     fun setQuery(q: String) = _state.update { it.copy(query = q) }
 
@@ -111,7 +114,7 @@ class AddGameViewModel(private val repo: Repository) : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () -> Unit) {
+fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () -> Unit, onScan: () -> Unit = {}) {
     val vm = appViewModel { AddGameViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -121,6 +124,7 @@ fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () ->
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = io.github.schnubbirunkel.boardshelf.ui.theme.glassTopBarColors(),
                 title = { Text(stringResource(R.string.add_title)) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) } }
             )
@@ -138,12 +142,15 @@ fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () ->
                 modifier = Modifier.fillMaxWidth()
             )
             Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onScan) {
+                    Icon(Icons.Default.QrCodeScanner, null, Modifier.size(18.dp)); Text(" " + stringResource(R.string.action_scan))
+                }
                 OutlinedButton(onClick = { manualDialog = true }) {
                     Icon(Icons.Default.EditNote, null, Modifier.size(18.dp)); Text(" " + stringResource(R.string.add_manual))
                 }
             }
             if (!vm.hasToken) {
-                ElevatedCard(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                GlassCard(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                     Column(Modifier.padding(12.dp)) {
                         Text(stringResource(R.string.add_no_token), style = MaterialTheme.typography.bodySmall)
                         TextButton(onClick = onSettings) { Text(stringResource(R.string.menu_settings)) }
@@ -164,10 +171,10 @@ fun AddGameScreen(onBack: () -> Unit, onAdded: (Long) -> Unit, onSettings: () ->
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(state.hits, key = { it.source.name + it.id }) { hit ->
                         ListItem(
-                            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable(enabled = state.importing == null) { vm.import(hit, onAdded) },
+                                .glass(RoundedCornerShape(20.dp))
+                                .bouncyClick(enabled = state.importing == null) { vm.import(hit, onAdded) },
                             leadingContent = {
                                 if (hit.thumbnail != null) {
                                     AsyncImage(

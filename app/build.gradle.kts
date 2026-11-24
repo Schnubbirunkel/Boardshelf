@@ -18,6 +18,8 @@ android {
         targetSdk = 35
         versionCode = versionCodeProp
         versionName = versionNameProp
+        // Optional app-wide BoardGameGeek token (one registration for the app, from the CI secret BGG_TOKEN).
+        buildConfigField("String", "BGG_TOKEN", "\"${(System.getenv("BGG_TOKEN") ?: "").replace("\"", "")}\"")
     }
 
     signingConfigs {
@@ -94,5 +96,6 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }

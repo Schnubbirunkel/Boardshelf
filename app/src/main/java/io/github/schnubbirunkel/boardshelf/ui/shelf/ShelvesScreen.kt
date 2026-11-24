@@ -15,7 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ElevatedCard
+import io.github.schnubbirunkel.boardshelf.ui.theme.GlassCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -57,6 +57,7 @@ fun ShelvesScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = io.github.schnubbirunkel.boardshelf.ui.theme.glassTopBarColors(),
                 title = { Text(stringResource(R.string.menu_manage_shelves)) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) } }
             )
@@ -67,7 +68,7 @@ fun ShelvesScreen(onBack: () -> Unit) {
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(shelves, key = { _, s -> s.id }) { i, s ->
-                ElevatedCard {
+                GlassCard {
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable { editing = s },
