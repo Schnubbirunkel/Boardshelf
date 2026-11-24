@@ -39,7 +39,8 @@ APK aus dem [neuesten Release](https://github.com/Schnubbirunkel/Boardshelf/rele
 ## Datenquellen & KI
 
 - Ohne jede Anmeldung: Wikidata/Wikipedia (Spieldaten), GameUPC-Testzugang, UPCitemdb und Open Products Facts (Barcodes & Cover).
-- Optional: eigener GameUPC-Schlüssel (kostenlos, gameupc.com), BoardGameGeek-Token, KI-Anbieter mit eigenem API-Schlüssel oder ein selbst gehostetes OpenAI-kompatibles Modell (z. B. Ollama mit `qwen2.5vl`). Alles unter **Einstellungen**.
+- GameUPC hat keine Anmeldung; genutzt wird der öffentliche Zugang (wie in den GameUPC-Beispielprogrammen). Ausgewählte Barcode-Zuordnungen werden an GameUPC zurückgemeldet.
+- Optional: BoardGameGeek-Token, KI-Anbieter mit eigenem API-Schlüssel oder ein selbst gehostetes OpenAI-kompatibles Modell (z. B. Ollama mit `qwen2.5vl`). Alles unter **Einstellungen**.
 
 ## Bauen
 

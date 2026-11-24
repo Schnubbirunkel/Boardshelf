@@ -330,6 +330,7 @@ class Repository(
     /** Imports a hit found via barcode: remembers the EAN and uses the shop picture of exactly this box as cover. */
     suspend fun importFromBarcode(hit: SearchHit?, result: BarcodeResult, manualName: String? = null): Long {
         val id = if (hit != null) importHit(hit) else createManualGame(manualName ?: result.query ?: result.ean)
+        hit?.confirmUrl?.let { url -> background.launch { runCatching { products.confirmGameUpc(url, installId()) } } }
         db.games().get(id)?.let { g -> if (g.ean == null) db.games().update(g.copy(ean = result.ean)) }
         val g = db.games().get(id) ?: return id
         if (g.coverPath == null) {
@@ -406,6 +407,12 @@ class Repository(
         } finally {
             loaded.forEach { it.first.delete() }
         }
+    }
+
+    /** Anonymous, random id of this installation (GameUPC uses it to spot abuse). */
+    private fun installId(): String {
+        val prefs = context.getSharedPreferences("install", Context.MODE_PRIVATE)
+        return prefs.getString("id", null) ?: ("boardshelf-" + UUID.randomUUID().toString().take(12)).also { prefs.edit().putString("id", it).apply() }
     }
 
     fun unknownBoxText(): String = context.getString(R.string.add_photo_ai_none)

@@ -12,6 +12,8 @@ data class SearchHit(
     val bggId: Int? = null,
     /** Large cover picture, if the source knows one (GameUPC). */
     val imageUrl: String? = null,
+    /** GameUPC: URL to confirm this barcode → game mapping (crowd-sourced database). */
+    val confirmUrl: String? = null,
 )
 
 /** Game information gathered from an online source. Box dimensions in centimetres. */

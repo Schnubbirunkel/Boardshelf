@@ -2,7 +2,9 @@ package io.github.schnubbirunkel.boardshelf.net
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.text.Normalizer
@@ -49,6 +51,7 @@ class ProductApi(private val http: OkHttpClient, private val gameUpcKey: () -> S
                 subtitle = "GameUPC · ${o.optInt("confidence")} %",
                 bggId = id,
                 imageUrl = o.optString("image_url").ifBlank { null },
+                confirmUrl = o.optString("update_url").ifBlank { null },
             )
         }.filter { it.name.isNotBlank() }
     }
@@ -61,6 +64,16 @@ class ProductApi(private val http: OkHttpClient, private val gameUpcKey: () -> S
         val upc = async { runCatching { upcItemDbLookup(ean) }.getOrDefault(emptyList()) }
         val opf = async { runCatching { openProductsFacts(ean) }.getOrNull() }
         (upc.await() + listOfNotNull(opf.await())).filter { it.title.isNotBlank() }
+    }
+
+    /** Tells GameUPC which game the user picked for a barcode – helps everyone (two votes make a mapping "good"). */
+    suspend fun confirmGameUpc(url: String, userId: String) {
+        val key = gameUpcKey().trim().ifEmpty { "test_test_test_test_test" }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val body = JSONObject().put("user_id", userId).toString()
+                .toRequestBody("application/json".toMediaType())
+            http.newCall(okhttp3.Request.Builder().url(url).post(body).header("x-api-key", key).build()).execute().close()
+        }
     }
 
     private suspend fun upcItemDbLookup(ean: String): List<Product> {
