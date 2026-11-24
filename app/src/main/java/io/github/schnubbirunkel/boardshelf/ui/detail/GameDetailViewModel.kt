@@ -60,6 +60,15 @@ class GameDetailViewModel(val repo: Repository, val gameId: Long) : ViewModel() 
     }
 
     fun refresh() = task { repo.refreshFromSources(gameId) }
+
+    /** AI researches the game again on the web (fills gaps, replaces the cover if it finds a verified one). */
+    fun aiResearch() = viewModelScope.launch {
+        try {
+            if (!repo.aiEnrich(gameId, replaceCover = true)) _events.emit(DetailEvent.Message(io.github.schnubbirunkel.boardshelf.R.string.cover_ai_none))
+        } catch (t: Throwable) {
+            _events.emit(DetailEvent.Error(t))
+        }
+    }
     fun delete() = task {
         game.value?.let { repo.deleteGame(it) }
         _events.emit(DetailEvent.Deleted)

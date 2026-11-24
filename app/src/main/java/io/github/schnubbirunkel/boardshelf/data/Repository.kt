@@ -178,9 +178,9 @@ class Repository(
             .copy(myRating = userRating?.coerceIn(0f, 10f) ?: 0f)
         val id = db.games().insert(game)
         info.imageUrl?.let { downloadCover(id, it) }
-        if (db.games().get(id)?.coverPath == null && info.publishers.none { it == "Boardshelf Demo" }) {
+        if (info.publishers.none { it == "Boardshelf Demo" } && (ai.enabled || db.games().get(id)?.coverPath == null)) {
             // in the background: AI checks can take a while, the box appears on the shelf right away
-            background.launch { runCatching { autoCover(id) } }
+            background.launch { runCatching { if (ai.enabled) aiEnrich(id) else autoCover(id) } }
         }
         return id
     }
@@ -385,6 +385,61 @@ class Repository(
         }
         return false
     }
+
+    /** Games the AI is currently researching (shown as progress in the detail screen). */
+    val aiBusy = kotlinx.coroutines.flow.MutableStateFlow<Set<Long>>(emptySet())
+
+    /**
+     * The AI researches a newly added game on the web by itself: it fills in missing facts and
+     * finds a picture of the box front, which is verified and cropped before it becomes the cover.
+     * Self-hosted models without web access check Boardshelf's own candidates instead.
+     */
+    suspend fun aiEnrich(gameId: Long, replaceCover: Boolean = false): Boolean {
+        aiBusy.value = aiBusy.value + gameId
+        try {
+            val g = db.games().get(gameId) ?: return false
+            var gotCover = false
+            if (ai.canSearchWeb) {
+                val lang = java.util.Locale.getDefault().getDisplayLanguage(java.util.Locale.ENGLISH).ifBlank { "English" }
+                val r = ai.researchGame(g.name, g.year, g.publishers?.substringBefore(','), g.ean, lang)
+                val cur = db.games().get(gameId) ?: return false
+                val defaultBox = cur.boxWidthCm == 29.6f && cur.boxHeightCm == 29.6f && cur.boxDepthCm == 7.2f
+                val size = r.boxSizeCm?.sortedArrayDescending()
+                db.games().update(
+                    cur.copy(
+                        year = cur.year ?: r.year,
+                        minPlayers = cur.minPlayers ?: r.minPlayers,
+                        maxPlayers = cur.maxPlayers ?: r.maxPlayers,
+                        playingTime = cur.playingTime ?: r.playingTime,
+                        minAge = cur.minAge ?: r.minAge,
+                        designers = cur.designers ?: r.designers.takeIf { it.isNotEmpty() }?.joinToString(", "),
+                        publishers = cur.publishers ?: r.publishers.takeIf { it.isNotEmpty() }?.joinToString(", "),
+                        categories = cur.categories ?: r.categories.takeIf { it.isNotEmpty() }?.joinToString(", "),
+                        description = cur.description ?: r.description,
+                        boxWidthCm = if (defaultBox && size != null) size[0] else cur.boxWidthCm,
+                        boxHeightCm = if (defaultBox && size != null) size[1] else cur.boxHeightCm,
+                        boxDepthCm = if (defaultBox && size != null) size[2] else cur.boxDepthCm,
+                        updatedAt = System.currentTimeMillis(),
+                    )
+                )
+                val now = db.games().get(gameId) ?: return false
+                if ((now.coverPath == null || replaceCover) && r.boxImages.isNotEmpty()) {
+                    gotCover = aiCoverFromUrls(now, r.boxImages)
+                }
+            }
+            val now = db.games().get(gameId) ?: return false
+            if (!gotCover && (now.coverPath == null || replaceCover)) {
+                gotCover = runCatching { aiCover(now, coverCandidates(now)) }.getOrDefault(false)
+            }
+            return gotCover
+        } finally {
+            aiBusy.value = aiBusy.value - gameId
+        }
+    }
+
+    /** Downloads the pictures the AI found, lets it verify them and uses the best one (cropped). */
+    private suspend fun aiCoverFromUrls(g: Game, urls: List<String>): Boolean =
+        aiCover(g, urls.distinct().map { io.github.schnubbirunkel.boardshelf.net.CoverCandidate(it, "AI", g.name, 100) })
 
     /** Lets the AI pick (and crop) the best cover among the candidates. Throws on AI errors. */
     suspend fun aiCover(g: Game, candidates: List<io.github.schnubbirunkel.boardshelf.net.CoverCandidate>): Boolean = withContext(Dispatchers.IO) {

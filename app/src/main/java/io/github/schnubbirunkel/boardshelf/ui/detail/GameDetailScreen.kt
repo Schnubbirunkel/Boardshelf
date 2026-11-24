@@ -12,6 +12,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import io.github.schnubbirunkel.boardshelf.ui.theme.GlassTabs
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -143,6 +146,9 @@ fun GameDetailScreen(
                             }
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_photo)) }, onClick = { menu = false; coverCamera() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.action_cover_gallery)) }, onClick = { menu = false; coverPicker() })
+                            if (vm.repo.ai.enabled) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.action_ai_research)) }, onClick = { menu = false; vm.aiResearch() })
+                            }
                             if (game?.bggId != null || game?.wikidataId != null) {
                                 DropdownMenuItem(text = { Text(stringResource(R.string.action_refresh)) }, onClick = { menu = false; vm.refresh() })
                             }
@@ -167,7 +173,14 @@ fun GameDetailScreen(
             ) {
                 Box3DViewer(g, intro = !fromShelf, modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = 24.dp, end = 24.dp, bottom = 8.dp))
             }
+            val aiBusy by vm.repo.aiBusy.collectAsStateWithLifecycle()
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+            if (g.id in aiBusy) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Text("  " + stringResource(R.string.ai_researching), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                }
+            }
             Text(
                 g.name, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)

@@ -2,6 +2,7 @@
 <resources>
     <string name="action_add">Hinzufügen</string>
     <string name="action_add_game">Spiel hinzufügen</string>
+    <string name="action_ai_research">Mit KI recherchieren</string>
     <string name="action_back">Zurück</string>
     <string name="action_cancel">Abbrechen</string>
     <string name="action_close">Schließen</string>
@@ -31,6 +32,7 @@
     <string name="add_photo_ai_running">KI liest die Schachtel …</string>
     <string name="add_search_label">Titel suchen (BGG / Wikidata)</string>
     <string name="add_title">Spiel hinzufügen</string>
+    <string name="ai_researching">KI recherchiert das Spiel im Web …</string>
     <string name="backup_done">Sicherung gespeichert.</string>
     <string name="backup_restart">Die Sicherung wurde wiederhergestellt. Boardshelf muss jetzt neu starten.</string>
     <string name="backup_restored">Sicherung wiederhergestellt</string>
@@ -51,8 +53,8 @@
     <string name="browser_hint">Öffne oder lade ein PDF herunter, um es als Anleitung zu speichern.</string>
     <string name="browser_save_title">Als Anleitung speichern?</string>
     <string name="browser_title">Anleitung suchen</string>
-    <string name="cover_ai_none">Die KI hat unter den Vorschlägen kein Bild der Schachtel-Vorderseite gefunden.</string>
-    <string name="cover_ai_pick">KI auswählen lassen</string>
+    <string name="cover_ai_none">Die KI hat kein geprüftes Bild der Schachtel-Vorderseite gefunden.</string>
+    <string name="cover_ai_pick">KI suchen lassen</string>
     <string name="cover_amazon_term">Brettspiel</string>
     <string name="cover_missing">Noch kein Cover. Such dir das passende Schachtelbild im Web aus oder fotografiere deine eigene Schachtel.</string>
     <string name="cover_search_hint">Lange auf das gewünschte Schachtelbild drücken. Tipp: Treffer erst öffnen, dann bekommst du die große Version.</string>
@@ -147,7 +149,7 @@
     <string name="settings_about">Über</string>
     <string name="settings_ai">KI-Bilderkennung (optional)</string>
     <string name="settings_ai_custom">Selbst gehostet</string>
-    <string name="settings_ai_explain">Eine Bild-KI prüft Cover-Vorschläge (Vorderseite der Schachtel? Das richtige Spiel?), schneidet sie automatisch zu und erkennt Spiele auf Fotos der Schachtel. Die Bilder werden verkleinert an den gewählten Dienst geschickt.</string>
+    <string name="settings_ai_explain">Beim Hinzufügen recherchiert die KI das Spiel selbständig im Web: Sie ergänzt fehlende Angaben (Spieler, Dauer, Alter, Autor:innen, Beschreibung) und sucht ein Bild der Schachtel-Vorderseite, prüft es und schneidet es zu. Claude, Gemini und ChatGPT suchen selbst im Web (bei Claude muss die Websuche in der Anthropic Console freigeschaltet sein). Selbst gehostete Modelle haben keinen Webzugang – sie prüfen stattdessen die Bilder, die Boardshelf findet.</string>
     <string name="settings_ai_get_key">API-Schlüssel holen</string>
     <string name="settings_ai_key">API-Schlüssel</string>
     <string name="settings_ai_key_optional">API-Schlüssel (optional)</string>

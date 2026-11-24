@@ -31,6 +31,22 @@ data class BoxIdentification(val title: String, val publisher: String?, val box:
 
 class AiException(message: String) : IOException(message)
 
+/** What the AI found on the web about a game. Only values it actually found are set. */
+data class GameResearch(
+    val name: String?,
+    val year: Int?,
+    val minPlayers: Int?,
+    val maxPlayers: Int?,
+    val playingTime: Int?,
+    val minAge: Int?,
+    val designers: List<String>,
+    val publishers: List<String>,
+    val categories: List<String>,
+    val description: String?,
+    val boxImages: List<String>,
+    val boxSizeCm: FloatArray?,
+)
+
 /**
  * Optional vision AI (Claude, Gemini, ChatGPT or a self-hosted OpenAI-compatible model) that
  * judges cover candidates and recognises game boxes on photos. Images are sent downscaled.
@@ -89,6 +105,107 @@ class AiVision(baseHttp: OkHttpClient, private val settings: () -> AppSettings) 
         val json = ask(prompt, listOf(photo))
         val title = json.optString("title").takeIf { it.isNotBlank() && it != "null" } ?: return null
         return BoxIdentification(title, json.optString("publisher").takeIf { it.isNotBlank() && it != "null" }, rect(json.optJSONArray("box")))
+    }
+
+    /** Claude, Gemini and ChatGPT can search the web themselves; self-hosted models can't. */
+    val canSearchWeb: Boolean
+        get() = enabled && settings().aiProvider in setOf(AiProvider.CLAUDE, AiProvider.GEMINI, AiProvider.OPENAI)
+
+    /**
+     * Lets the AI research a game on the web on its own: facts plus direct links to pictures of
+     * the box front. The links are verified afterwards (download + vision check).
+     */
+    suspend fun researchGame(name: String, year: Int?, publisher: String?, ean: String?, language: String): GameResearch {
+        val known = listOfNotNull(year?.let { "published $it" }, publisher?.let { "publisher $it" }, ean?.let { "barcode/EAN $it" }).joinToString(", ")
+        val prompt = """
+            Research the board game "$name"${if (known.isNotEmpty()) " ($known)" else ""} on the web.
+            Use reliable pages (publisher website, BoardGameGeek, Wikipedia, large retailers).
+            Find direct links to IMAGE FILES (jpg, png or webp – not web pages) that show the FRONT of the game box,
+            preferably the $language edition, as large as possible. Open product pages to get the real image file URLs
+            (for example og:image or the main product photo; BoardGameGeek images are on cf.geekdo-images.com).
+            Answer with JSON only, no other text:
+            {"name": "title", "year": 2015, "min_players": 2, "max_players": 4, "playing_time": 60, "min_age": 10,
+             "designers": ["..."], "publishers": ["..."], "categories": ["..."],
+             "description": "2–4 sentences describing the game, written in $language",
+             "box_images": ["https://.../box.jpg", "..."], "box_size_cm": [29.5, 29.5, 7]}
+            Use null (or []) for anything you could not find. Never invent image URLs – only URLs you saw.
+        """.trimIndent()
+        val json = askWithWebSearch(prompt)
+        fun int(k: String) = json.opt(k)?.toString()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }
+        fun list(k: String) = json.optJSONArray(k)?.let { a -> (0 until a.length()).mapNotNull { a.optString(it).trim().takeIf { s -> s.isNotEmpty() && s != "null" } } }.orEmpty()
+        val size = json.optJSONArray("box_size_cm")?.let { a -> if (a.length() == 3) FloatArray(3) { a.optDouble(it, 0.0).toFloat() } else null }
+            ?.takeIf { it.all { v -> v in 1f..80f } }
+        return GameResearch(
+            name = json.optString("name").takeIf { it.isNotBlank() && it != "null" },
+            year = int("year")?.takeIf { it in 1800..2100 },
+            minPlayers = int("min_players"), maxPlayers = int("max_players"),
+            playingTime = int("playing_time"), minAge = int("min_age"),
+            designers = list("designers"), publishers = list("publishers"), categories = list("categories"),
+            description = json.optString("description").takeIf { it.isNotBlank() && it != "null" },
+            boxImages = list("box_images").filter { it.startsWith("http") },
+            boxSizeCm = size,
+        )
+    }
+
+    private suspend fun askWithWebSearch(prompt: String): JSONObject = withContext(Dispatchers.IO) {
+        val s = settings()
+        val model = s.aiModel.ifBlank { s.aiProvider.defaultModel }
+        val text = when (s.aiProvider) {
+            AiProvider.CLAUDE -> claudeWithTools(model, s.aiKey, prompt)
+            AiProvider.GEMINI -> {
+                val body = JSONObject()
+                    .put("contents", JSONArray().put(JSONObject().put("role", "user").put("parts", JSONArray().put(JSONObject().put("text", prompt)))))
+                    .put("tools", JSONArray().put(JSONObject().put("google_search", JSONObject())).put(JSONObject().put("url_context", JSONObject())))
+                val res = post("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent", body, mapOf("x-goog-api-key" to s.aiKey))
+                val p = res.optJSONArray("candidates")?.optJSONObject(0)?.optJSONObject("content")?.optJSONArray("parts") ?: JSONArray()
+                (0 until p.length()).joinToString("") { p.getJSONObject(it).optString("text") }
+            }
+            AiProvider.OPENAI -> {
+                fun call(tool: String): JSONObject = post(
+                    "https://api.openai.com/v1/responses",
+                    JSONObject().put("model", model).put("input", prompt).put("tools", JSONArray().put(JSONObject().put("type", tool))),
+                    mapOf("Authorization" to "Bearer ${s.aiKey}")
+                )
+                val res = try { call("web_search") } catch (e: AiException) { call("web_search_preview") }
+                val out = res.optJSONArray("output") ?: JSONArray()
+                buildString {
+                    for (i in 0 until out.length()) {
+                        val c = out.getJSONObject(i).optJSONArray("content") ?: continue
+                        for (j in 0 until c.length()) append(c.getJSONObject(j).optString("text"))
+                    }
+                }
+            }
+            else -> throw AiException("Web search not available for this provider")
+        }
+        extractJson(text)
+    }
+
+    /** Claude with its server-side web search (and web fetch when available); continues paused turns. */
+    private fun claudeWithTools(model: String, key: String, prompt: String): String {
+        fun tools(withFetch: Boolean) = JSONArray().put(JSONObject().put("type", "web_search_20250305").put("name", "web_search").put("max_uses", 6)).apply {
+            if (withFetch) put(JSONObject().put("type", "web_fetch_20250910").put("name", "web_fetch").put("max_uses", 6))
+        }
+        var withFetch = true
+        val messages = JSONArray().put(JSONObject().put("role", "user").put("content", prompt))
+        repeat(4) {
+            val body = JSONObject().put("model", model).put("max_tokens", 4000).put("messages", messages).put("tools", tools(withFetch))
+            val headers = mutableMapOf("x-api-key" to key, "anthropic-version" to "2023-06-01")
+            if (withFetch) headers["anthropic-beta"] = "web-fetch-2025-09-10"
+            val res = try {
+                post("https://api.anthropic.com/v1/messages", body, headers)
+            } catch (e: AiException) {
+                if (withFetch) { withFetch = false; return@repeat } else throw e
+            }
+            val content = res.optJSONArray("content") ?: JSONArray()
+            if (res.optString("stop_reason") == "pause_turn") {
+                messages.put(JSONObject().put("role", "assistant").put("content", content))
+                return@repeat
+            }
+            return buildString {
+                for (i in 0 until content.length()) content.getJSONObject(i).let { if (it.optString("type") == "text") append(it.optString("text")) }
+            }
+        }
+        throw AiException("No answer from Claude")
     }
 
     /** Small end-to-end test used by the settings screen. Returns the model's answer. */

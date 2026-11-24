@@ -205,6 +205,17 @@ class MainActivity : AppCompatActivity() {
                 Log.e("Boardshelf", "Demo seeding failed", t)
             }
             val cropGame = intent.getLongExtra("crop_game", -1L)
+            intent.getStringExtra("barcode_import")?.let { code ->
+                try {
+                    val r = repo.lookupBarcode(code)
+                    val id = r.existing?.id ?: repo.importFromBarcode(r.hits.firstOrNull(), r)
+                    kotlinx.coroutines.delay(4000)
+                    pendingRoute = "game/$id"
+                } catch (t: Throwable) {
+                    Log.e("Boardshelf", "barcode import failed", t)
+                }
+                return@launch
+            }
             intent.getStringExtra("barcode")?.let { pendingRoute = "barcode?code=$it"; return@launch }
             if (cropGame > 0) {
                 repo.db.games().get(cropGame)?.coverPath?.let { rel ->

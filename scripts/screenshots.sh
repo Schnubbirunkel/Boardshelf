@@ -50,6 +50,10 @@ for lang in de en; do
   shot "${lang}_7_crop" 6 0 --el crop_game 2
   shot "${lang}_8_barcode" 14 0 --es barcode 4002051682682
   shot "${lang}_9_settings" 6 1 --es route settings
+  if [ "$lang" = "de" ]; then
+    shot "test_import_catan" 25 0 --es barcode_import 4002051682682
+    shot "test_import_catan_info" 3 1
+  fi
 done
 # record the take-out animation (animations enabled for this part)
 adb shell cmd locale set-app-locales "$PKG" --locales de || true
@@ -63,5 +67,5 @@ adb shell "screenrecord --time-limit 6 --bit-rate 6000000 /sdcard/open.mp4 & sle
 sleep 3
 adb pull /sdcard/open.mp4 "$OUT/open.mp4"
 rm -f "$OUT"/*_0_warmup.png
-adb logcat -d -v brief "*:E" > "$OUT/logcat.txt" || true
+adb logcat -d -v brief "Boardshelf:V" "AndroidRuntime:E" "*:S" > "$OUT/logcat.txt" || true
 ls -la "$OUT"

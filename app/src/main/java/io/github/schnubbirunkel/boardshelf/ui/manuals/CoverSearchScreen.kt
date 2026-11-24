@@ -143,12 +143,12 @@ fun CoverSearchScreen(gameId: Long, onDone: () -> Unit, onPicked: (String) -> Un
                     Text(stringResource(R.string.cover_suggestions), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     if (repo.ai.enabled) {
                         androidx.compose.material3.FilledTonalButton(
-                            enabled = !saving && candidates != null,
+                            enabled = !saving,
                             onClick = {
                                 saving = true
                                 scope.launch {
                                     try {
-                                        val ok = repo.aiCover(g, candidates.orEmpty())
+                                        val ok = repo.aiEnrich(g.id, replaceCover = true)
                                         if (ok) onDone() else snackbar.showSnackbar(context.getString(R.string.cover_ai_none))
                                     } catch (e: Exception) {
                                         snackbar.showSnackbar(context.errorText(e))
