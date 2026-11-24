@@ -51,8 +51,8 @@ for lang in de en; do
   shot "${lang}_8_barcode" 14 0 --es barcode 4002051682682
   shot "${lang}_9_settings" 6 1 --es route settings
   if [ "$lang" = "de" ]; then
-    shot "test_import_catan" 25 0 --es barcode_import 4002051682682
-    shot "test_import_catan_info" 3 1
+    shot "test_import_catan" 30 0 --es barcode_import 4002051682682
+    shot "test_import_catan_info" 6 1 --es route "'game/16'"
   fi
 done
 # record the take-out animation (animations enabled for this part)
