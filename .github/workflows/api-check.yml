@@ -26,4 +26,8 @@ jobs:
           echo "== Wikidata P2339=180263 (7 Wonders Duel?)"; curl -s -A "Boardshelf/1.3 (github.com/Schnubbirunkel/Boardshelf)" "https://www.wikidata.org/w/api.php?action=query&format=json&list=search&srlimit=3&srsearch=haswbstatement:P2339=173346" | head -c 400; echo
           echo "== geekdo xmlapi2 no token"; curl -s -o /dev/null -w "%{http_code}\n" "https://api.geekdo.com/xmlapi2/thing?id=13"; curl -s "https://api.geekdo.com/xmlapi2/thing?id=13" | head -c 300; echo
           echo "== bgg xmlapi2 no token"; curl -s -o /dev/null -w "%{http_code}\n" "https://boardgamegeek.com/xmlapi2/thing?id=13"
+          for Q in Q17271 Q30898809; do
+            echo "== claims $Q"; curl -s -A "Boardshelf/1.3 (github.com/Schnubbirunkel/Boardshelf)" "https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&ids=$Q&props=claims|sitelinks&languages=de" \
+              | jq -c --arg q $Q '.entities[$q] | {props: (.claims|keys|map(select(. == "P1872" or . == "P1873" or . == "P2047" or . == "P2899" or . == "P577" or . == "P287" or . == "P178" or . == "P123" or . == "P18" or . == "P2339"))), dewiki: .sitelinks.dewiki.title, enwiki: .sitelinks.enwiki.title}'
+          done
           echo "== Wikidata Catan GTIN count"; curl -s -A "Boardshelf/1.3" "https://www.wikidata.org/w/api.php?action=query&format=json&list=search&srsearch=haswbstatement:P3962&srlimit=1" | head -c 400; echo
