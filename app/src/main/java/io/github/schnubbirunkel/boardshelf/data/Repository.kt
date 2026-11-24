@@ -575,7 +575,9 @@ class Repository(
         fillFromWiki(g)
         val now = db.games().get(gameId) ?: return
         if (now.coverPath == null && now.bggId != null) {
-            bggPageImage(now.bggId)?.let { trySetCover(gameId, it) }
+            val img = bggPageImage(now.bggId)
+            android.util.Log.i("Boardshelf", "import ${now.name}: bgg image $img")
+            img?.let { if (!trySetCover(gameId, it)) android.util.Log.w("Boardshelf", "cover download failed: $it") }
         }
         if (db.games().get(gameId)?.coverPath == null) runCatching { autoCover(gameId) }
     }
@@ -586,11 +588,21 @@ class Repository(
 
     /** Picture URLs a web page declares for itself (og:image, twitter:image, JSON-LD image). */
     suspend fun pageImages(pageUrl: String): List<String> = withContext(Dispatchers.IO) {
+        // like a browser: the device's WebView user agent and its cookies (e.g. after the BGG login)
+        val ua = runCatching { android.webkit.WebSettings.getDefaultUserAgent(context) }.getOrNull()
+            ?: "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"
+        val cookies = runCatching { android.webkit.CookieManager.getInstance().getCookie(pageUrl) }.getOrNull()
         val req = okhttp3.Request.Builder().url(pageUrl)
-            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36")
-            .header("Accept", "text/html").build()
+            .header("User-Agent", ua)
+            .header("Accept", "text/html,application/xhtml+xml")
+            .header("Accept-Language", java.util.Locale.getDefault().toLanguageTag())
+            .apply { if (!cookies.isNullOrBlank()) header("Cookie", cookies) }
+            .build()
         val (finalUrl, html) = http.newCall(req).execute().use { r ->
-            if (!r.isSuccessful) return@withContext emptyList()
+            if (!r.isSuccessful) {
+                android.util.Log.w("Boardshelf", "page $pageUrl -> HTTP ${r.code}")
+                return@withContext emptyList()
+            }
             val ct = r.header("Content-Type").orEmpty()
             if (ct.startsWith("image/")) return@withContext listOf(r.request.url.toString())
             r.request.url to (r.body?.source()?.let { src -> src.request(800_000); src.buffer.clone().readUtf8() } ?: "")
@@ -601,8 +613,10 @@ class Repository(
         }
         Regex("<link[^>]+rel=[\"']image_src[\"'][^>]*href=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE).findAll(html).forEach { urls += it.groupValues[1] }
         Regex("\"image\"\\s*:\\s*(?:\\[\\s*)?\"(https?:[^\"]+)\"").findAll(html).take(4).forEach { urls += it.groupValues[1].replace("\\/", "/") }
-        urls.mapNotNull { u -> runCatching { finalUrl.resolve(android.text.Html.fromHtml(u, 0).toString())?.toString() }.getOrNull() }
+        val result = urls.mapNotNull { u -> runCatching { finalUrl.resolve(android.text.Html.fromHtml(u, 0).toString())?.toString() }.getOrNull() }
             .filter { it.startsWith("http") }.distinct()
+        android.util.Log.i("Boardshelf", "page $pageUrl -> ${html.length} chars, images: ${result.take(3)}")
+        result
     }
 
     // ---------------------------------------------------------------- info search
