@@ -11,6 +11,7 @@
     <string name="action_cover_photo">Photograph cover</string>
     <string name="action_cover_web">Find cover on the web</string>
     <string name="action_delete">Delete</string>
+    <string name="action_done">Done</string>
     <string name="action_download">Download</string>
     <string name="action_edit">Edit</string>
     <string name="action_refresh">Reload online data</string>
@@ -81,7 +82,7 @@
     <string name="crop_title">Crop cover</string>
     <string name="delete_game_text">Remove “%1$s” including all photos and rulebooks from the shelf?</string>
     <string name="delete_game_title">Delete game?</string>
-    <string name="demo_description">This is a fictional demo game with generated cover art. Use it to try out the shelf: long-press a box to move it to another place or board, tap it to see it in 3D.</string>
+    <string name="demo_description">This is a fictional demo game with generated cover art. Use it to try out the shelf: long-press and slide over the boxes to see their covers, tap one to see it in 3D.</string>
     <string name="demo_savestate_note">Round 4 – blue leads with 37 points, yellow has to pass next turn.</string>
     <string name="demo_savestate_title">Sunday evening game</string>
     <string name="detail_drag_hint">Drag to rotate · double tap to reset</string>
@@ -209,6 +210,8 @@
     <string name="settings_wikidata_explain">Additional search results and encyclopedia summaries in your language.</string>
     <string name="shelf_count">%1$d games</string>
     <string name="shelf_default_name">Board %1$d</string>
+    <string name="shelf_edit_hint">Long-press a box and drag it to its new place</string>
+    <string name="shelf_edit_title">Rearrange shelf</string>
     <string name="shelf_empty_text">Search BoardGameGeek or Wikidata, import your BGG collection or load the demo collection in the settings.</string>
     <string name="shelf_empty_title">Your shelf is still empty</string>
     <string name="shelf_search_hint">Find on shelf…</string>

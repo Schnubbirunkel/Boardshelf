@@ -140,6 +140,7 @@ fun ShelfScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var menu by remember { mutableStateOf(false) }
     var opening by remember { mutableStateOf<Opening?>(null) }
+    var editMode by rememberSaveable { mutableStateOf(false) }
     val scroll = rememberScrollState()
     val density = LocalDensity.current
     val headerPx = with(density) { HEADER_HEIGHT.toPx() }
@@ -165,15 +166,19 @@ fun ShelfScreen(
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
+                    } else if (editMode) {
+                        Text(stringResource(R.string.shelf_edit_title))
                     } else {
                         Text(stringResource(R.string.app_name), modifier = Modifier.alpha(collapse))
                     }
                 },
                 actions = {
                     if (searching) IconButton(onClick = { searching = false; query = "" }) { Icon(Icons.Default.Close, stringResource(R.string.action_close)) }
+                    if (editMode) androidx.compose.material3.TextButton(onClick = { editMode = false }) { Text(stringResource(R.string.action_done)) }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            DropdownMenuItem(text = { Text(stringResource(R.string.shelf_edit_title)) }, onClick = { menu = false; editMode = true })
                             DropdownMenuItem(text = { Text(stringResource(R.string.menu_manage_shelves)) }, onClick = { menu = false; onManageShelves() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.covers_load_missing)) }, onClick = { menu = false; vm.loadMissingCovers() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.import_title)) }, onClick = { menu = false; onBggImport() })
@@ -198,7 +203,7 @@ fun ShelfScreen(
                 shelves = st.shelves, games = st.games, spineMode = true, query = query,
                 hiddenId = opening?.game?.id,
                 onOpen = { id, rect -> if (opening == null) st.games.firstOrNull { it.id == id }?.let { vm.handover(it); opening = Opening(it, rect) } },
-                onOrder = vm::applyOrder, padding = padding, scroll = scroll,
+                onOrder = vm::applyOrder, padding = padding, scroll = scroll, editMode = editMode,
                 header = {
                     Column(Modifier.padding(start = 24.dp, end = 24.dp).alpha(1f - collapse)) {
                         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
@@ -209,6 +214,19 @@ fun ShelfScreen(
                     }
                 },
             )
+            if (editMode) {
+                Text(
+                    stringResource(R.string.shelf_edit_hint),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = padding.calculateTopPadding() + 6.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xF0161A20))
+                        .glass(RoundedCornerShape(18.dp))
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                )
+            }
             val batch by vm.batch.collectAsStateWithLifecycle()
             batch?.let { b ->
                 Row(
@@ -328,9 +346,27 @@ private fun ShelfWall(
     padding: PaddingValues,
     scroll: androidx.compose.foundation.ScrollState,
     header: @Composable () -> Unit,
+    editMode: Boolean = false,
 ) {
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
+    // "peek": long-press and slide over the boxes – the box under the finger comes out and shows its front
+    var peekId by remember { mutableStateOf<Long?>(null) }
+    val peekAnims = remember { androidx.compose.runtime.mutableStateMapOf<Long, androidx.compose.animation.core.Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>() }
+    LaunchedEffect(peekId) {
+        val cur = peekId
+        if (cur != null) {
+            val a = peekAnims.getOrPut(cur) { androidx.compose.animation.core.Animatable(0f) }
+            launch { a.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.72f, stiffness = 420f)) }
+        }
+        peekAnims.keys.filter { it != cur }.forEach { id ->
+            val a = peekAnims[id] ?: return@forEach
+            launch {
+                a.animateTo(0f, androidx.compose.animation.core.spring(dampingRatio = 0.95f, stiffness = 520f))
+                if (peekId != id) peekAnims.remove(id)
+            }
+        }
+    }
     BoxWithConstraints(
         Modifier.fillMaxSize()
     ) {
@@ -390,7 +426,7 @@ private fun ShelfWall(
         Box(
             Modifier
                 .fillMaxSize()
-                .verticalScroll(scroll, enabled = drag == null)
+                .verticalScroll(scroll, enabled = drag == null && peekId == null)
         ) {
             Box(
                 Modifier
@@ -406,7 +442,31 @@ private fun ShelfWall(
                             }
                         })
                     }
-                    .pointerInput(Unit) {
+                    .pointerInput(editMode) {
+                        if (!editMode) {
+                            var finger = Offset.Zero
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = { p ->
+                                    finger = p
+                                    currentLayout.peekTarget(p, dims)?.let {
+                                        peekId = it
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
+                                },
+                                onDrag = { change, amount ->
+                                    change.consume()
+                                    finger += amount
+                                    val id = currentLayout.peekTarget(finger, dims)
+                                    if (id != null && id != peekId) {
+                                        peekId = id
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    }
+                                },
+                                onDragEnd = { peekId = null },
+                                onDragCancel = { peekId = null },
+                            )
+                            return@pointerInput
+                        }
                         detectDragGesturesAfterLongPress(
                             onDragStart = { p ->
                                 val l = currentLayout
@@ -458,6 +518,7 @@ private fun ShelfWall(
                 val dragging = drag
                 layout.items.values.forEach { item ->
                     if (item.id == dragging?.id || item.id == hiddenId) return@forEach
+                    if ((peekAnims[item.id]?.value ?: 0f) > 0.02f) return@forEach
                     val g = gamesById[item.id] ?: return@forEach
                     key(item.id) {
                         val pos by animateIntOffsetAsState(IntOffset(item.x.roundToInt(), item.y.roundToInt()), label = "box")
@@ -471,6 +532,13 @@ private fun ShelfWall(
                                 .alpha(if (match) 1f else 0.25f)
                         )
                     }
+                }
+
+                // boxes pulled out by the peek gesture (the newest on top)
+                peekAnims.entries.sortedBy { if (it.key == peekId) 1 else 0 }.forEach { (id, anim) ->
+                    val g = gamesById[id] ?: return@forEach
+                    val item = layout.items[id] ?: return@forEach
+                    key("peek$id") { PeekBox(g, item, anim.value, layout) }
                 }
 
                 if (dragging != null) {

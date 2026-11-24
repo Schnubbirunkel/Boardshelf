@@ -97,3 +97,14 @@ fun Map<Long, List<Long>>.withInserted(id: Long, shelfId: Long, index: Int): Map
     mapValues { (sid, v) ->
         if (sid == shelfId) v.toMutableList().apply { add(index.coerceIn(0, size), id) } else v
     }
+
+/** The box under (or next to) the finger on the shelf line the finger is on – for the peek gesture. */
+fun ShelfLayout.peekTarget(p: Offset, dims: ShelfDims): Long? {
+    val sp = shelves.firstOrNull { p.y >= it.top && p.y < it.boardTop + dims.board } ?: return null
+    val line = ((p.y - sp.top) / dims.lineHeight).toInt().coerceIn(0, sp.lines - 1)
+    val onLine = items.values.filter { it.shelfId == sp.shelf.id && it.line == line }
+    if (onLine.isEmpty()) return null
+    onLine.firstOrNull { p.x >= it.x && p.x <= it.x + it.w }?.let { return it.id }
+    val nearest = onLine.minByOrNull { kotlin.math.abs(it.x + it.w / 2 - p.x) } ?: return null
+    return if (kotlin.math.abs(nearest.x + nearest.w / 2 - p.x) < dims.lineHeight / 3) nearest.id else null
+}

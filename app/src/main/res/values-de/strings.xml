@@ -11,6 +11,7 @@
     <string name="action_cover_photo">Cover fotografieren</string>
     <string name="action_cover_web">Cover im Web suchen</string>
     <string name="action_delete">Löschen</string>
+    <string name="action_done">Fertig</string>
     <string name="action_download">Herunterladen</string>
     <string name="action_edit">Bearbeiten</string>
     <string name="action_refresh">Online-Daten neu laden</string>
@@ -80,7 +81,7 @@
     <string name="crop_title">Cover zuschneiden</string>
     <string name="delete_game_text">„%1$s“ samt allen Fotos und Anleitungen aus dem Regal entfernen?</string>
     <string name="delete_game_title">Spiel löschen?</string>
-    <string name="demo_description">Dies ist ein ausgedachtes Demo-Spiel mit generiertem Cover. Probier damit das Regal aus: Lange auf eine Schachtel drücken, um sie umzustellen, antippen für die 3D-Ansicht.</string>
+    <string name="demo_description">Dies ist ein ausgedachtes Demo-Spiel mit generiertem Cover. Probier damit das Regal aus: Lange drücken und über die Schachteln streichen zeigt ihre Cover, antippen öffnet die 3D-Ansicht.</string>
     <string name="demo_savestate_note">Runde 4 – Blau führt mit 37 Punkten, Gelb muss nächste Runde aussetzen.</string>
     <string name="demo_savestate_title">Partie vom Sonntagabend</string>
     <string name="detail_drag_hint">Ziehen zum Drehen · Doppeltippen zum Zurücksetzen</string>
@@ -208,6 +209,8 @@
     <string name="settings_wikidata_explain">Zusätzliche Suchtreffer und Lexikon-Zusammenfassungen in deiner Sprache.</string>
     <string name="shelf_count">%1$d Spiele</string>
     <string name="shelf_default_name">Regalboden %1$d</string>
+    <string name="shelf_edit_hint">Schachtel lange drücken und an den neuen Platz ziehen</string>
+    <string name="shelf_edit_title">Regal umsortieren</string>
     <string name="shelf_empty_text">Suche bei BoardGameGeek oder Wikidata, importiere deine BGG-Sammlung oder lade in den Einstellungen die Demo-Sammlung.</string>
     <string name="shelf_empty_title">Dein Regal ist noch leer</string>
     <string name="shelf_search_hint">Im Regal suchen…</string>
