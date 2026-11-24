@@ -7,6 +7,14 @@ ACT=io.github.schnubbirunkel.boardshelf.MainActivity
 OUT=docs/screenshots
 mkdir -p "$OUT"
 
+# migration test: previous version with demo data, then update to the new build
+if [ -f old.apk ]; then
+  adb install -r old.apk
+  adb shell am start -W -n "$PKG/$ACT" --ez seed_demo true > /dev/null
+  sleep 25
+  adb shell am force-stop "$PKG"
+  adb logcat -c
+fi
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 # clean status bar
@@ -41,6 +49,7 @@ for lang in de en; do
   shot "${lang}_6_manuals" 6 1 --es route "'game/1?tab=3'"
   shot "${lang}_7_crop" 6 0 --el crop_game 2
   shot "${lang}_8_barcode" 14 0 --es barcode 4002051682682
+  shot "${lang}_9_settings" 6 1 --es route settings
 done
 # record the take-out animation (animations enabled for this part)
 adb shell cmd locale set-app-locales "$PKG" --locales de || true

@@ -12,6 +12,8 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-java@v5
         with:
@@ -19,6 +21,14 @@ jobs:
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v5
+
+      - name: Build previous version (for the database migration test)
+        run: |
+          PREV=$(git tag --sort=-v:refname | head -1)
+          echo "previous release: $PREV"
+          git worktree add /tmp/prev "$PREV"
+          (cd /tmp/prev && chmod +x gradlew && ./gradlew --no-daemon assembleDebug)
+          cp /tmp/prev/app/build/outputs/apk/debug/app-debug.apk old.apk
 
       - name: Build debug APK
         run: chmod +x gradlew && ./gradlew --no-daemon assembleDebug
