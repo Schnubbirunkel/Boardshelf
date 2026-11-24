@@ -5,6 +5,7 @@
 
 <p align="center">
   <img src="docs/screenshots/de_1_shelf.png" width="200" alt="Regal">
+  <img src="docs/peek.gif" width="200" alt="Über das Regal streichen">
   <img src="docs/take-out.gif" width="200" alt="Schachtel aus dem Regal ziehen">
   <img src="docs/screenshots/de_3_box3d.png" width="200" alt="3D-Ansicht">
 </p>
@@ -17,7 +18,8 @@
 ## Funktionen
 
 - **Regalansicht** – die Schachteln stehen mit dem Rücken nach vorn auf Regalböden, in echter Größe zueinander (Maße von BoardGameGeek, anpassbar).
-- **Umsortieren** – Schachtel lange gedrückt halten und auf einen anderen Platz oder Regalboden ziehen. Regalböden lassen sich anlegen, umbenennen, verschieben und löschen.
+- **Durchblättern** – lange auf das Regal drücken und über die Schachteln streichen: Die Schachtel unter dem Finger kommt heraus und zeigt ihr Cover, die vorige gleitet zurück.
+- **Umsortieren** – im Modus „Regal umsortieren“ (Menü) Schachteln lange drücken und auf einen anderen Platz oder Regalboden ziehen. Regalböden lassen sich anlegen, umbenennen, verschieben und löschen.
 - **Herausziehen in 3D** – Antippen zieht die Schachtel aus dem Regal, dreht sie und öffnet die Detailseite. Dort lässt sie sich mit dem Finger frei drehen (Doppeltippen setzt zurück).
 - **Barcode-Scanner** – Barcode auf der Schachtel scannen, das Spiel wird mit Cover angelegt (GameUPC inkl. europäischer Ausgaben, UPCitemdb, Open Products Facts, Wikidata).
 - **KI-Bilderkennung (optional)** – Claude, Gemini, ChatGPT oder ein selbst gehostetes Modell (Ollama, LM Studio …) wählt und schneidet Cover automatisch und erkennt Spiele auf einem Foto der Schachtel.
@@ -58,7 +60,7 @@ Technik: Kotlin, Jetpack Compose, Room, OkHttp, Coil. Die 3D-Schachtel ist ein e
 
 ## English
 
-Boardshelf shows your board game collection as a shelf. Boxes stand with their spines facing out, true to scale. Long-press and drag to rearrange them across shelf boards. Tap a box to watch it get pulled out of the shelf in 3D, turn around and become the detail page, where you can spin it freely.
+Boardshelf shows your board game collection as a shelf. Boxes stand with their spines facing out, true to scale. Long-press and slide over the shelf to pull out the boxes and see their covers; rearrange them in the “Rearrange shelf” mode. Tap a box to watch it get pulled out of the shelf in 3D, turn around and become the detail page, where you can spin it freely.
 
 - **Barcode scanner**: scan the box, the game is added with its cover (GameUPC, UPCitemdb, Open Products Facts, Wikidata).
 - Game data from **Wikidata/Wikipedia** without any sign-up, optionally **BoardGameGeek**.

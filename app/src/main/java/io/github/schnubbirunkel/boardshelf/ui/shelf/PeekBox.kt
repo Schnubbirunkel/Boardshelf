@@ -32,7 +32,10 @@ private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
  */
 @Composable
 fun PeekBox(g: Game, item: ItemPos, p: Float, @Suppress("UNUSED_PARAMETER") layout: ShelfLayout) {
-    val tex = rememberBoxTextures(g, 700, full = true)
+    // the small shelf textures are already loaded – use them until the large ones are ready
+    val small = rememberBoxTextures(g, 300, full = false)
+    val large = rememberBoxTextures(g, 700, full = true)
+    val tex = large ?: small
     val label = listOfNotNull(g.name, g.year?.toString()).joinToString(" · ")
     Canvas(Modifier.fillMaxSize()) {
         val t = p.coerceIn(0f, 1.15f) // the spring may overshoot a little – looks like a small "pop"
