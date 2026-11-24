@@ -1,0 +1,27 @@
+--------- beginning of main
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/173346 -> HTTP 403
+I/Boardshelf( 6813): import 7 Wonders Duel: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/230802 -> HTTP 403
+I/Boardshelf( 6813): import Azul: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/266192 -> HTTP 403
+I/Boardshelf( 6813): import Wingspan: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/167791 -> HTTP 403
+I/Boardshelf( 6813): import Terraforming Mars: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/822 -> HTTP 403
+I/Boardshelf( 6813): import Carcassonne: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/9209 -> HTTP 403
+I/Boardshelf( 6813): import Ticket to Ride: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/30549 -> HTTP 403
+I/Boardshelf( 6813): import Pandemic: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/178900 -> HTTP 403
+I/Boardshelf( 6813): import Codenames: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/36218 -> HTTP 403
+I/Boardshelf( 6813): import Dominion: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/148228 -> HTTP 403
+I/Boardshelf( 6813): import Splendor: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/31260 -> HTTP 403
+I/Boardshelf( 6813): import Agricola: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/224517 -> HTTP 403
+I/Boardshelf( 6813): import Brass: Birmingham: bgg image null
+W/Boardshelf( 6813): page https://boardgamegeek.com/boardgame/295947 -> HTTP 403
+I/Boardshelf( 6813): import Cascadia: bgg image null
