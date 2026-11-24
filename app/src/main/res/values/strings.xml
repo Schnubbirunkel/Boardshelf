@@ -69,6 +69,9 @@
     <string name="cover_use_confirm">Use as cover</string>
     <string name="cover_use_hint">Only use it if it shows the front of the box.</string>
     <string name="cover_use_title">Use this picture as cover?</string>
+    <string name="covers_done">Done: %1$d of %2$d covers found</string>
+    <string name="covers_load_missing">Load missing covers</string>
+    <string name="covers_progress">Covers %1$d/%2$d · %3$d found</string>
     <string name="crop_apply">Use as cover</string>
     <string name="crop_box">Box format</string>
     <string name="crop_free">Free</string>

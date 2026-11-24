@@ -523,23 +523,53 @@ class Repository(
 
     data class CsvImportResult(val added: Int, val skipped: Int, val expansionsSkipped: Int)
 
-    /** Progress of the background job that loads covers and details after an import. */
+    /** State of the background job that loads covers and details (after an import or via "load missing covers"). */
+    data class BatchState(val done: Int, val total: Int, val covers: Int, val running: Boolean)
+
+    val batch = kotlinx.coroutines.flow.MutableStateFlow<BatchState?>(null)
+    /** Kept for the import screen: (done, total) while running. */
     val enrichProgress = kotlinx.coroutines.flow.MutableStateFlow<Pair<Int, Int>?>(null)
     private val enrichQueue = kotlinx.coroutines.channels.Channel<Long>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+    private val queued = java.util.Collections.synchronizedSet(mutableSetOf<Long>())
     private var enrichTotal = 0
     private var enrichDone = 0
+    private var enrichCovers = 0
 
     init {
         // one worker, gently paced, so BGG/Wikidata are not hammered during a big import
         background.launch {
             for (id in enrichQueue) {
+                val had = db.games().get(id)?.coverPath != null
                 runCatching { enrichImported(id) }
+                if (!had && db.games().get(id)?.coverPath != null) enrichCovers++
+                queued.remove(id)
                 enrichDone++
-                enrichProgress.value = if (enrichDone >= enrichTotal) null else enrichDone to enrichTotal
+                val running = enrichDone < enrichTotal
+                enrichProgress.value = if (running) enrichDone to enrichTotal else null
+                batch.value = BatchState(enrichDone, enrichTotal, enrichCovers, running)
+                if (!running) { enrichDone = 0; enrichTotal = 0; enrichCovers = 0 }
                 delay(1200)
             }
         }
     }
+
+    private suspend fun enqueue(ids: List<Long>) {
+        val fresh = ids.filter { queued.add(it) }
+        if (fresh.isEmpty()) return
+        enrichTotal += fresh.size
+        enrichProgress.value = enrichDone to enrichTotal
+        batch.value = BatchState(enrichDone, enrichTotal, enrichCovers, true)
+        fresh.forEach { enrichQueue.send(it) }
+    }
+
+    /** "Load missing covers": every game without a cover goes through the background job. Returns how many. */
+    suspend fun loadMissingCovers(): Int {
+        val ids = db.games().all().filter { it.coverPath == null }.map { it.id }
+        enqueue(ids)
+        return ids.size
+    }
+
+    fun dismissBatch() { if (batch.value?.running == false) batch.value = null }
 
     /** Imports BoardGameGeek's collection export. New boards are added when the shelf is full. */
     suspend fun importBggCsv(text: String, includeExpansions: Boolean, onlyOwned: Boolean, progress: (Int, Int) -> Unit): CsvImportResult {
@@ -563,9 +593,7 @@ class Repository(
             newIds += id
             progress(i + 1, todo.size)
         }
-        enrichTotal += newIds.size
-        enrichProgress.value = enrichDone to enrichTotal
-        newIds.forEach { enrichQueue.send(it) }
+        enqueue(newIds)
         return CsvImportResult(todo.size, rows.size - todo.size, if (includeExpansions) 0 else expansions)
     }
 
@@ -579,7 +607,9 @@ class Repository(
             android.util.Log.i("Boardshelf", "import ${now.name}: bgg image $img")
             img?.let { if (!trySetCover(gameId, it)) android.util.Log.w("Boardshelf", "cover download failed: $it") }
         }
-        if (db.games().get(gameId)?.coverPath == null) runCatching { autoCover(gameId) }
+        if (db.games().get(gameId)?.coverPath == null) {
+            if (ai.enabled) runCatching { aiEnrich(gameId) } else runCatching { autoCover(gameId) }
+        }
     }
 
     /** The cover picture BGG shows for a game (og:image of the public game page). */

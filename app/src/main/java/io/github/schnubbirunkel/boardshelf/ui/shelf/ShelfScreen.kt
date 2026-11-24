@@ -114,6 +114,10 @@ class ShelfViewModel(private val repo: Repository) : ViewModel() {
 
     fun handover(g: Game) { repo.handover[g.id] = g }
 
+    val batch = repo.batch
+    fun loadMissingCovers() { viewModelScope.launch { repo.loadMissingCovers() } }
+    fun dismissBatch() = repo.dismissBatch()
+
     fun applyOrder(order: Map<Long, List<Long>>) {
         viewModelScope.launch { repo.applyOrder(order) }
     }
@@ -171,6 +175,7 @@ fun ShelfScreen(
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.menu_manage_shelves)) }, onClick = { menu = false; onManageShelves() })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.covers_load_missing)) }, onClick = { menu = false; vm.loadMissingCovers() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.import_title)) }, onClick = { menu = false; onBggImport() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.menu_settings)) }, onClick = { menu = false; onSettings() })
                         }
@@ -204,6 +209,30 @@ fun ShelfScreen(
                     }
                 },
             )
+            val batch by vm.batch.collectAsStateWithLifecycle()
+            batch?.let { b ->
+                Row(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = padding.calculateBottomPadding() + 6.dp, start = 24.dp, end = 24.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color(0xF0161A20))
+                        .glass(RoundedCornerShape(22.dp))
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (b.running) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            progress = { if (b.total > 0) b.done.toFloat() / b.total else 0f },
+                            modifier = Modifier.size(18.dp), strokeWidth = 2.dp
+                        )
+                        Text("  " + stringResource(R.string.covers_progress, b.done, b.total, b.covers), style = MaterialTheme.typography.labelLarge)
+                    } else {
+                        Text(stringResource(R.string.covers_done, b.covers, b.total), style = MaterialTheme.typography.labelLarge)
+                        IconButton(onClick = vm::dismissBatch, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                    }
+                }
+            }
             if (st.games.isEmpty()) {
                 GlassCard(Modifier.align(Alignment.Center).padding(32.dp)) {
                     Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {

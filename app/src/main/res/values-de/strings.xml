@@ -68,6 +68,9 @@
     <string name="cover_use_confirm">Als Cover verwenden</string>
     <string name="cover_use_hint">Nur übernehmen, wenn es die Vorderseite der Schachtel zeigt.</string>
     <string name="cover_use_title">Dieses Bild als Cover verwenden?</string>
+    <string name="covers_done">Fertig: %1$d von %2$d Covern gefunden</string>
+    <string name="covers_load_missing">Fehlende Cover laden</string>
+    <string name="covers_progress">Cover %1$d/%2$d · %3$d gefunden</string>
     <string name="crop_apply">Als Cover übernehmen</string>
     <string name="crop_box">Schachtelformat</string>
     <string name="crop_free">Frei</string>
