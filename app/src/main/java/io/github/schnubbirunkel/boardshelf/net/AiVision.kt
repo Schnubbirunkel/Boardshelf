@@ -45,6 +45,10 @@ data class GameResearch(
     val description: String?,
     val boxImages: List<String>,
     val boxSizeCm: FloatArray?,
+    /** Product/game pages the AI named. */
+    val pages: List<String> = emptyList(),
+    /** Pages the web search actually returned (grounding / citations) – real URLs. */
+    val sources: List<String> = emptyList(),
 )
 
 /**
@@ -127,10 +131,12 @@ class AiVision(baseHttp: OkHttpClient, private val settings: () -> AppSettings) 
             {"name": "title", "year": 2015, "min_players": 2, "max_players": 4, "playing_time": 60, "min_age": 10,
              "designers": ["..."], "publishers": ["..."], "categories": ["..."],
              "description": "2–4 sentences describing the game, written in $language",
-             "box_images": ["https://.../box.jpg", "..."], "box_size_cm": [29.5, 29.5, 7]}
+             "box_images": ["https://.../box.jpg", "..."], "pages": ["https://publisher.example/game", "https://boardgamegeek.com/boardgame/..."],
+             "box_size_cm": [29.5, 29.5, 7]}
+            "pages" are the product or game pages you used (publisher, BoardGameGeek, shops).
             Use null (or []) for anything you could not find. Never invent image URLs – only URLs you saw.
         """.trimIndent()
-        val json = askWithWebSearch(prompt)
+        val (json, sources) = askWithWebSearch(prompt)
         fun int(k: String) = json.opt(k)?.toString()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }
         fun list(k: String) = json.optJSONArray(k)?.let { a -> (0 until a.length()).mapNotNull { a.optString(it).trim().takeIf { s -> s.isNotEmpty() && s != "null" } } }.orEmpty()
         val size = json.optJSONArray("box_size_cm")?.let { a -> if (a.length() == 3) FloatArray(3) { a.optDouble(it, 0.0).toFloat() } else null }
@@ -144,20 +150,27 @@ class AiVision(baseHttp: OkHttpClient, private val settings: () -> AppSettings) 
             description = json.optString("description").takeIf { it.isNotBlank() && it != "null" },
             boxImages = list("box_images").filter { it.startsWith("http") },
             boxSizeCm = size,
+            pages = list("pages").filter { it.startsWith("http") },
+            sources = sources,
         )
     }
 
-    private suspend fun askWithWebSearch(prompt: String): JSONObject = withContext(Dispatchers.IO) {
+    private suspend fun askWithWebSearch(prompt: String): Pair<JSONObject, List<String>> = withContext(Dispatchers.IO) {
         val s = settings()
         val model = s.aiModel.ifBlank { s.aiProvider.defaultModel }
+        val sources = mutableListOf<String>()
         val text = when (s.aiProvider) {
-            AiProvider.CLAUDE -> claudeWithTools(model, s.aiKey, prompt)
+            AiProvider.CLAUDE -> claudeWithTools(model, s.aiKey, prompt, sources)
             AiProvider.GEMINI -> {
                 val body = JSONObject()
                     .put("contents", JSONArray().put(JSONObject().put("role", "user").put("parts", JSONArray().put(JSONObject().put("text", prompt)))))
                     .put("tools", JSONArray().put(JSONObject().put("google_search", JSONObject())).put(JSONObject().put("url_context", JSONObject())))
                 val res = post("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent", body, mapOf("x-goog-api-key" to s.aiKey))
-                val p = res.optJSONArray("candidates")?.optJSONObject(0)?.optJSONObject("content")?.optJSONArray("parts") ?: JSONArray()
+                val cand = res.optJSONArray("candidates")?.optJSONObject(0)
+                cand?.optJSONObject("groundingMetadata")?.optJSONArray("groundingChunks")?.let { ch ->
+                    for (i in 0 until ch.length()) ch.optJSONObject(i)?.optJSONObject("web")?.optString("uri")?.takeIf { it.startsWith("http") }?.let { sources += it }
+                }
+                val p = cand?.optJSONObject("content")?.optJSONArray("parts") ?: JSONArray()
                 (0 until p.length()).joinToString("") { p.getJSONObject(it).optString("text") }
             }
             AiProvider.OPENAI -> {
@@ -171,17 +184,23 @@ class AiVision(baseHttp: OkHttpClient, private val settings: () -> AppSettings) 
                 buildString {
                     for (i in 0 until out.length()) {
                         val c = out.getJSONObject(i).optJSONArray("content") ?: continue
-                        for (j in 0 until c.length()) append(c.getJSONObject(j).optString("text"))
+                        for (j in 0 until c.length()) {
+                            val part = c.getJSONObject(j)
+                            append(part.optString("text"))
+                            part.optJSONArray("annotations")?.let { an ->
+                                for (k in 0 until an.length()) an.optJSONObject(k)?.optString("url")?.takeIf { it.startsWith("http") }?.let { sources += it }
+                            }
+                        }
                     }
                 }
             }
             else -> throw AiException("Web search not available for this provider")
         }
-        extractJson(text)
+        extractJson(text) to sources.distinct()
     }
 
     /** Claude with its server-side web search (and web fetch when available); continues paused turns. */
-    private fun claudeWithTools(model: String, key: String, prompt: String): String {
+    private fun claudeWithTools(model: String, key: String, prompt: String, sources: MutableList<String>): String {
         fun tools(withFetch: Boolean) = JSONArray().put(JSONObject().put("type", "web_search_20250305").put("name", "web_search").put("max_uses", 6)).apply {
             if (withFetch) put(JSONObject().put("type", "web_fetch_20250910").put("name", "web_fetch").put("max_uses", 6))
         }
@@ -197,6 +216,13 @@ class AiVision(baseHttp: OkHttpClient, private val settings: () -> AppSettings) 
                 if (withFetch) { withFetch = false; return@repeat } else throw e
             }
             val content = res.optJSONArray("content") ?: JSONArray()
+            for (i in 0 until content.length()) {
+                val block = content.getJSONObject(i)
+                if (block.optString("type") == "web_search_tool_result") {
+                    block.optJSONArray("content")?.let { arr -> for (k in 0 until arr.length()) arr.optJSONObject(k)?.optString("url")?.takeIf { it.startsWith("http") }?.let { sources += it } }
+                }
+                block.optJSONArray("citations")?.let { arr -> for (k in 0 until arr.length()) arr.optJSONObject(k)?.optString("url")?.takeIf { it.startsWith("http") }?.let { sources += it } }
+            }
             if (res.optString("stop_reason") == "pause_turn") {
                 messages.put(JSONObject().put("role", "assistant").put("content", content))
                 return@repeat

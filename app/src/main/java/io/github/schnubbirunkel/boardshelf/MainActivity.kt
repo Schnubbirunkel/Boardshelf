@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
                             onScan = { nav.navigate("barcode") },
                             onSettings = { nav.navigate("settings") },
                             onManageShelves = { nav.navigate("shelves") },
+                            onBggImport = { nav.navigate("bggimport") },
                         )
                     }
                     screen(
@@ -128,7 +129,8 @@ class MainActivity : AppCompatActivity() {
                             onOpenGame = { id -> nav.navigate("game/$id") { popUpTo("shelf") } },
                         )
                     }
-                    screen("settings") { SettingsScreen(onBack = { nav.popBackStack() }) }
+                    screen("settings") { SettingsScreen(onBack = { nav.popBackStack() }, onBggImport = { nav.navigate("bggimport") }) }
+                    screen("bggimport") { io.github.schnubbirunkel.boardshelf.ui.settings.BggImportScreen(onBack = { nav.popBackStack() }) }
                     screen("shelves") { ShelvesScreen(onBack = { nav.popBackStack() }) }
                     screen("manual/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
                         ManualViewerScreen(it.arguments?.getLong("id") ?: 0L, onBack = { nav.popBackStack() })

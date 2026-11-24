@@ -62,7 +62,7 @@ import kotlin.system.exitProcess
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onBggImport: () -> Unit = {}) {
     val context = LocalContext.current
     val repo = context.app().repository
     val settings by repo.settings.state.collectAsStateWithLifecycle()
@@ -108,6 +108,11 @@ fun SettingsScreen(onBack: () -> Unit) {
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Section(stringResource(R.string.import_title)) {
+                Text(stringResource(R.string.import_explain_short), style = MaterialTheme.typography.bodySmall)
+                Button(onClick = onBggImport) { Text(stringResource(R.string.import_open)) }
+            }
+
             Section(stringResource(R.string.settings_bgg)) {
                 Text(stringResource(R.string.settings_bgg_explain), style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = { context.openUrl(BggApi.APPLICATIONS_URL) }) { Text(stringResource(R.string.settings_bgg_get_token)) }
@@ -214,6 +219,11 @@ fun SettingsScreen(onBack: () -> Unit) {
                     }
                     if (aiTesting) LinearProgressIndicator(Modifier.fillMaxWidth())
                     aiTest?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    val log by repo.aiLog.collectAsStateWithLifecycle()
+                    if (log.isNotEmpty()) {
+                        Text(stringResource(R.string.settings_ai_log), style = MaterialTheme.typography.titleSmall)
+                        Text(log.take(25).joinToString("\n"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
 

@@ -101,6 +101,7 @@ fun GameDetailScreen(
             when (e) {
                 is DetailEvent.Error -> snackbar.showSnackbar(context.errorText(e.t))
                 is DetailEvent.Message -> snackbar.showSnackbar(context.getString(e.res))
+                is DetailEvent.Text -> snackbar.showSnackbar(e.text)
                 DetailEvent.Deleted -> onBack()
                 is DetailEvent.Share -> {
                     val uri = context.app().repository.files.uriFor(e.file)
@@ -175,6 +176,14 @@ fun GameDetailScreen(
             }
             val aiBusy by vm.repo.aiBusy.collectAsStateWithLifecycle()
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+            val aiStatus by vm.repo.aiStatus.collectAsStateWithLifecycle()
+            aiStatus[g.id]?.takeIf { it.startsWith("error:") && g.id !in aiBusy }?.let { msg ->
+                Text(
+                    stringResource(R.string.ai_failed, msg.removePrefix("error:")),
+                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
             if (g.id in aiBusy) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.material3.CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)

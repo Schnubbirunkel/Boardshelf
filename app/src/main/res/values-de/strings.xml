@@ -19,6 +19,7 @@
     <string name="action_save">Speichern</string>
     <string name="action_scan">Scannen</string>
     <string name="action_search">Suchen</string>
+    <string name="action_search_info">Infos im Netz suchen</string>
     <string name="action_share">Teilen</string>
     <string name="action_show_covers">Cover zeigen</string>
     <string name="action_show_spines">Buchrücken zeigen</string>
@@ -32,6 +33,7 @@
     <string name="add_photo_ai_running">KI liest die Schachtel …</string>
     <string name="add_search_label">Titel suchen (BGG / Wikidata)</string>
     <string name="add_title">Spiel hinzufügen</string>
+    <string name="ai_failed">KI-Recherche fehlgeschlagen: %1$s</string>
     <string name="ai_researching">KI recherchiert das Spiel im Web …</string>
     <string name="backup_done">Sicherung gespeichert.</string>
     <string name="backup_restart">Die Sicherung wurde wiederhergestellt. Boardshelf muss jetzt neu starten.</string>
@@ -97,12 +99,29 @@
     <string name="field_title">Titel</string>
     <string name="field_width">Breite</string>
     <string name="field_year">Jahr</string>
+    <string name="import_csv_file">CSV-Datei</string>
+    <string name="import_done">%1$d Spiele importiert, %2$d standen schon im Regal.</string>
+    <string name="import_downloading">Lade Sammlung von BGG …</string>
+    <string name="import_enriching">Lade Cover und Details: %1$d von %2$d</string>
+    <string name="import_expansions">Erweiterungen</string>
+    <string name="import_expansions_skipped">%1$d Erweiterungen übersprungen.</string>
+    <string name="import_explain">1. Unten bei BoardGameGeek anmelden. 2. BGG-Benutzername eintragen und „Importieren“ tippen. Alternativ eine CSV-Datei wählen, die du auf der BGG-Website exportiert hast (Sammlung → Export). Cover und Beschreibungen werden danach im Hintergrund geladen; ist das Regal voll, kommen neue Regalböden dazu.</string>
+    <string name="import_explain_short">Importiert alle Spiele deiner BoardGameGeek-Sammlung – ohne API-Token. Reichen die Regalböden nicht, kommen automatisch neue dazu.</string>
+    <string name="import_login_hint">Anmeldung bei BoardGameGeek (deine Daten bleiben auf dem Gerät):</string>
+    <string name="import_need_login">BGG hat die Sammlung nicht geliefert – bitte zuerst unten anmelden (und den Benutzernamen prüfen).</string>
+    <string name="import_not_csv">Das ist kein BoardGameGeek-Sammlungsexport.</string>
+    <string name="import_only_owned">Nur im Besitz</string>
+    <string name="import_open">Import öffnen</string>
+    <string name="import_start">Importieren</string>
+    <string name="import_title">BGG-Sammlung importieren</string>
     <string name="info_categories">Kategorien</string>
     <string name="info_description">Beschreibung</string>
     <string name="info_designers">Autor:innen</string>
+    <string name="info_found">%1$d Angaben ergänzt (%2$s)</string>
     <string name="info_mechanics">Mechaniken</string>
     <string name="info_more">Mehr anzeigen</string>
     <string name="info_notes">Meine Notizen</string>
+    <string name="info_nothing_new">Keine neuen Angaben gefunden.</string>
     <string name="info_on_shelf">Steht auf:</string>
     <string name="info_publishers">Verlage</string>
     <string name="info_rank">Rang %1$d</string>
@@ -153,6 +172,7 @@
     <string name="settings_ai_get_key">API-Schlüssel holen</string>
     <string name="settings_ai_key">API-Schlüssel</string>
     <string name="settings_ai_key_optional">API-Schlüssel (optional)</string>
+    <string name="settings_ai_log">KI-Protokoll</string>
     <string name="settings_ai_model">Modell (leer = Standard)</string>
     <string name="settings_ai_models">Bild-Modelle für Ollama</string>
     <string name="settings_ai_off">Aus</string>

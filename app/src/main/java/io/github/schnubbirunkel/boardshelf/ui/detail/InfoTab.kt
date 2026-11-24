@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -62,6 +63,13 @@ fun InfoTab(g: Game, vm: GameDetailViewModel, onSearchCover: () -> Unit, onCover
     val context = LocalContext.current
     val shelves by vm.shelves.collectAsState()
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        val searching by vm.infoSearching.collectAsState()
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.FilledTonalButton(enabled = !searching, onClick = { vm.searchInfo() }) {
+                Icon(Icons.Default.TravelExplore, null, Modifier.size(18.dp)); Text(" " + stringResource(R.string.action_search_info))
+            }
+            if (searching) androidx.compose.material3.CircularProgressIndicator(Modifier.padding(start = 12.dp).size(20.dp), strokeWidth = 2.dp)
+        }
         if (g.coverPath == null) {
             GlassCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

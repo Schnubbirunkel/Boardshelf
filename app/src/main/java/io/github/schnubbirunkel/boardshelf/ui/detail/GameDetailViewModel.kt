@@ -18,6 +18,7 @@ import java.io.File
 sealed interface DetailEvent {
     data class Error(val t: Throwable) : DetailEvent
     data class Message(val res: Int) : DetailEvent
+    data class Text(val text: String) : DetailEvent
     data object Deleted : DetailEvent
     data class Share(val file: File, val mime: String) : DetailEvent
 }
@@ -60,6 +61,23 @@ class GameDetailViewModel(val repo: Repository, val gameId: Long) : ViewModel() 
     }
 
     fun refresh() = task { repo.refreshFromSources(gameId) }
+
+    val infoSearching = MutableStateFlow(false)
+
+    /** "Search info online": fills empty fields from all available sources. */
+    fun searchInfo() = viewModelScope.launch {
+        infoSearching.value = true
+        try {
+            val r = repo.searchInfoOnline(gameId)
+            when {
+                r.filled > 0 -> _events.emit(DetailEvent.Text(repo.infoFoundText(r.filled, r.sources)))
+                r.errors.isNotEmpty() -> _events.emit(DetailEvent.Error(r.errors.first()))
+                else -> _events.emit(DetailEvent.Message(io.github.schnubbirunkel.boardshelf.R.string.info_nothing_new))
+            }
+        } finally {
+            infoSearching.value = false
+        }
+    }
 
     /** AI researches the game again on the web (fills gaps, replaces the cover if it finds a verified one). */
     fun aiResearch() = viewModelScope.launch {

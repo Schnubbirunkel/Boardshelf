@@ -128,6 +128,7 @@ fun ShelfScreen(
     onScan: () -> Unit,
     onSettings: () -> Unit,
     onManageShelves: () -> Unit,
+    onBggImport: () -> Unit = {},
 ) {
     val vm = appViewModel { ShelfViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
@@ -170,6 +171,7 @@ fun ShelfScreen(
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.menu_manage_shelves)) }, onClick = { menu = false; onManageShelves() })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.import_title)) }, onClick = { menu = false; onBggImport() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.menu_settings)) }, onClick = { menu = false; onSettings() })
                         }
                     }

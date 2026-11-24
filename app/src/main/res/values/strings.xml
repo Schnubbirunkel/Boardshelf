@@ -19,6 +19,7 @@
     <string name="action_save">Save</string>
     <string name="action_scan">Scan</string>
     <string name="action_search">Search</string>
+    <string name="action_search_info">Search info online</string>
     <string name="action_share">Share</string>
     <string name="action_show_covers">Show covers</string>
     <string name="action_show_spines">Show spines</string>
@@ -32,6 +33,7 @@
     <string name="add_photo_ai_running">AI is reading the box …</string>
     <string name="add_search_label">Search title (BGG / Wikidata)</string>
     <string name="add_title">Add game</string>
+    <string name="ai_failed">AI research failed: %1$s</string>
     <string name="ai_researching">AI is researching the game on the web …</string>
     <string name="app_name" translatable="false">Boardshelf</string>
     <string name="backup_done">Backup saved.</string>
@@ -98,12 +100,29 @@
     <string name="field_title">Title</string>
     <string name="field_width">Width</string>
     <string name="field_year">Year</string>
+    <string name="import_csv_file">CSV file</string>
+    <string name="import_done">%1$d games imported, %2$d were already on the shelf.</string>
+    <string name="import_downloading">Downloading collection from BGG …</string>
+    <string name="import_enriching">Loading covers and details: %1$d of %2$d</string>
+    <string name="import_expansions">Expansions</string>
+    <string name="import_expansions_skipped">%1$d expansions skipped.</string>
+    <string name="import_explain">1. Log in to BoardGameGeek below. 2. Enter your BGG username and tap Import. Alternatively choose a CSV file you exported on the BGG website (collection → Export). Covers and descriptions are loaded afterwards in the background; when the shelf is full, new boards are added.</string>
+    <string name="import_explain_short">Imports all games of your BoardGameGeek collection – without API token. New shelf boards are added automatically when needed.</string>
+    <string name="import_login_hint">BoardGameGeek login (your data stays on this device):</string>
+    <string name="import_need_login">BGG did not return the collection – please log in below first (and check the username).</string>
+    <string name="import_not_csv">This is not a BoardGameGeek collection export.</string>
+    <string name="import_only_owned">Owned only</string>
+    <string name="import_open">Open import</string>
+    <string name="import_start">Import</string>
+    <string name="import_title">Import BGG collection</string>
     <string name="info_categories">Categories</string>
     <string name="info_description">Description</string>
     <string name="info_designers">Designers</string>
+    <string name="info_found">%1$d details added (%2$s)</string>
     <string name="info_mechanics">Mechanics</string>
     <string name="info_more">Show more</string>
     <string name="info_notes">My notes</string>
+    <string name="info_nothing_new">No new details found.</string>
     <string name="info_on_shelf">Stands on:</string>
     <string name="info_publishers">Publishers</string>
     <string name="info_rank">Rank %1$d</string>
@@ -154,6 +173,7 @@
     <string name="settings_ai_get_key">Get API key</string>
     <string name="settings_ai_key">API key</string>
     <string name="settings_ai_key_optional">API key (optional)</string>
+    <string name="settings_ai_log">AI log</string>
     <string name="settings_ai_model">Model (empty = default)</string>
     <string name="settings_ai_models">Vision models for Ollama</string>
     <string name="settings_ai_off">Off</string>

@@ -61,6 +61,34 @@ class Repository(
         }
     }
 
+    /** Usable width of one shelf board in cm on this device (the shelf is drawn at 4.3 dp per cm). */
+    private fun shelfCapacityCm(): Float {
+        val dm = context.resources.displayMetrics
+        val widthDp = minOf(dm.widthPixels, dm.heightPixels) / dm.density
+        return ((widthDp - 44f) / 4.3f).coerceAtLeast(20f)
+    }
+
+    /**
+     * Where a new box goes: the board after the last used one that still has room; when all
+     * boards are full, a new board is added automatically.
+     */
+    private suspend fun placeForNewGame(depthCm: Float): Pair<Long, Int> {
+        ensureShelves()
+        val shelves = db.shelves().all()
+        val games = db.games().all()
+        val cap = shelfCapacityCm()
+        val lastUsed = shelves.indexOfLast { s -> games.any { it.shelfId == s.id } }.coerceAtLeast(0)
+        for (i in lastUsed until shelves.size) {
+            val onShelf = games.filter { it.shelfId == shelves[i].id }
+            val used = onShelf.sumOf { (it.boxDepthCm + 0.25f).toDouble() }
+            if (onShelf.isEmpty() || used + depthCm <= cap) {
+                return shelves[i].id to ((onShelf.maxOfOrNull { it.position } ?: -1) + 1)
+            }
+        }
+        addShelf(null)
+        return db.shelves().all().last().id to 0
+    }
+
     suspend fun addShelf(name: String?) {
         val all = db.shelves().all()
         val n = name?.takeIf { it.isNotBlank() } ?: context.getString(R.string.shelf_default_name, all.size + 1)
@@ -170,17 +198,15 @@ class Repository(
         return info.copy(wikiExtract = s.first, wikiUrl = s.second, wikidataId = s.third)
     }
 
-    suspend fun insertFromInfo(info: GameInfo, userRating: Float? = null): Long {
-        ensureShelves()
-        val shelf = db.shelves().all().last()
-        val pos = (db.games().maxPosition(shelf.id) ?: -1) + 1
-        val game = Game(shelfId = shelf.id, position = pos, name = info.name).withInfo(info)
-            .copy(myRating = userRating?.coerceIn(0f, 10f) ?: 0f)
+    suspend fun insertFromInfo(info: GameInfo, userRating: Float? = null, enrich: Boolean = true): Long {
+        val draft = Game(name = info.name).withInfo(info)
+        val (shelfId, pos) = placeForNewGame(draft.boxDepthCm)
+        val game = draft.copy(shelfId = shelfId, position = pos, myRating = userRating?.coerceIn(0f, 10f) ?: 0f)
         val id = db.games().insert(game)
         info.imageUrl?.let { downloadCover(id, it) }
-        if (info.publishers.none { it == "Boardshelf Demo" } && (ai.enabled || db.games().get(id)?.coverPath == null)) {
+        if (enrich && info.publishers.none { it == "Boardshelf Demo" } && (ai.enabled || db.games().get(id)?.coverPath == null)) {
             // in the background: AI checks can take a while, the box appears on the shelf right away
-            background.launch { runCatching { if (ai.enabled) aiEnrich(id) else autoCover(id) } }
+            background.launch { runCatching { if (ai.enabled) aiEnrich(id) else { fillFromWiki(db.games().get(id)!!); autoCover(id) } } }
         }
         return id
     }
@@ -396,42 +422,34 @@ class Repository(
      */
     suspend fun aiEnrich(gameId: Long, replaceCover: Boolean = false): Boolean {
         aiBusy.value = aiBusy.value + gameId
+        val name = db.games().get(gameId)?.name ?: return false
         try {
-            val g = db.games().get(gameId) ?: return false
             var gotCover = false
+            val imageUrls = mutableListOf<String>()
             if (ai.canSearchWeb) {
-                val lang = java.util.Locale.getDefault().getDisplayLanguage(java.util.Locale.ENGLISH).ifBlank { "English" }
-                val r = ai.researchGame(g.name, g.year, g.publishers?.substringBefore(','), g.ean, lang)
-                val cur = db.games().get(gameId) ?: return false
-                val defaultBox = cur.boxWidthCm == 29.6f && cur.boxHeightCm == 29.6f && cur.boxDepthCm == 7.2f
-                val size = r.boxSizeCm?.sortedArrayDescending()
-                db.games().update(
-                    cur.copy(
-                        year = cur.year ?: r.year,
-                        minPlayers = cur.minPlayers ?: r.minPlayers,
-                        maxPlayers = cur.maxPlayers ?: r.maxPlayers,
-                        playingTime = cur.playingTime ?: r.playingTime,
-                        minAge = cur.minAge ?: r.minAge,
-                        designers = cur.designers ?: r.designers.takeIf { it.isNotEmpty() }?.joinToString(", "),
-                        publishers = cur.publishers ?: r.publishers.takeIf { it.isNotEmpty() }?.joinToString(", "),
-                        categories = cur.categories ?: r.categories.takeIf { it.isNotEmpty() }?.joinToString(", "),
-                        description = cur.description ?: r.description,
-                        boxWidthCm = if (defaultBox && size != null) size[0] else cur.boxWidthCm,
-                        boxHeightCm = if (defaultBox && size != null) size[1] else cur.boxHeightCm,
-                        boxDepthCm = if (defaultBox && size != null) size[2] else cur.boxDepthCm,
-                        updatedAt = System.currentTimeMillis(),
-                    )
-                )
-                val now = db.games().get(gameId) ?: return false
-                if ((now.coverPath == null || replaceCover) && r.boxImages.isNotEmpty()) {
-                    gotCover = aiCoverFromUrls(now, r.boxImages)
+                val (filled, r) = aiResearchFacts(db.games().get(gameId)!!)
+                log(name, "$filled Angaben ergänzt")
+                imageUrls += r.boxImages
+                // pictures declared by the pages the AI actually visited (more reliable than links it writes)
+                for (page in (r.pages + r.sources).distinct().take(8)) {
+                    imageUrls += runCatching { pageImages(page) }.getOrDefault(emptyList()).take(3)
                 }
             }
-            val now = db.games().get(gameId) ?: return false
-            if (!gotCover && (now.coverPath == null || replaceCover)) {
-                gotCover = runCatching { aiCover(now, coverCandidates(now)) }.getOrDefault(false)
+            val g = db.games().get(gameId) ?: return false
+            if (g.coverPath == null || replaceCover) {
+                g.bggId?.let { id -> bggPageImage(id)?.let { imageUrls += it } }
+                val candidates = imageUrls.distinct().map { io.github.schnubbirunkel.boardshelf.net.CoverCandidate(it, "AI", g.name, 100) } +
+                    runCatching { coverCandidates(g) }.getOrDefault(emptyList())
+                log(name, "${candidates.size} Bildkandidaten werden geprüft")
+                gotCover = aiCover(g, candidates.distinctBy { it.url })
+                log(name, if (gotCover) "Cover gesetzt" else "kein geprüftes Schachtelbild gefunden")
             }
+            aiStatus.value = aiStatus.value + (gameId to (if (gotCover) "ok" else "nocover"))
             return gotCover
+        } catch (t: Throwable) {
+            log(name, "Fehler: ${t.message}")
+            aiStatus.value = aiStatus.value + (gameId to ("error:" + (t.message ?: t.javaClass.simpleName)))
+            throw t
         } finally {
             aiBusy.value = aiBusy.value - gameId
         }
@@ -445,15 +463,19 @@ class Repository(
     suspend fun aiCover(g: Game, candidates: List<io.github.schnubbirunkel.boardshelf.net.CoverCandidate>): Boolean = withContext(Dispatchers.IO) {
         val loaded = mutableListOf<Pair<File, android.graphics.Bitmap>>()
         try {
-            for (c in candidates.take(10)) {
-                if (loaded.size >= 6) break
+            for (c in candidates.take(16)) {
+                if (loaded.size >= 8) break
                 val f = runCatching { downloadCoverCandidate(c.url, emptyMap()) }.getOrNull() ?: continue
                 val bmp = Images.decodeSampled(f, 1600)
                 if (bmp == null) { f.delete(); continue }
                 loaded += f to bmp
             }
+            log(g.name, "${loaded.size} Bilder geladen")
             if (loaded.isEmpty()) return@withContext false
-            val verdicts = ai.judgeCovers(g.name, g.publishers?.substringBefore(','), g.year, loaded.map { it.second })
+            val verdicts = loaded.chunked(4).flatMapIndexed { chunk, part ->
+                ai.judgeCovers(g.name, g.publishers?.substringBefore(','), g.year, part.map { it.second })
+                    .map { it.copy(index = it.index + chunk * 4) }
+            }
             val best = verdicts
                 .filter { it.isFrontCover && it.sameGame && it.confidence >= 0.6f && it.index in loaded.indices }
                 .maxByOrNull { it.confidence } ?: return@withContext false
@@ -469,6 +491,8 @@ class Repository(
         val prefs = context.getSharedPreferences("install", Context.MODE_PRIVATE)
         return prefs.getString("id", null) ?: ("boardshelf-" + UUID.randomUUID().toString().take(12)).also { prefs.edit().putString("id", it).apply() }
     }
+
+    fun infoFoundText(n: Int, sources: List<String>) = context.getString(R.string.info_found, n, sources.joinToString(", "))
 
     fun unknownBoxText(): String = context.getString(R.string.add_photo_ai_none)
 
@@ -493,6 +517,192 @@ class Repository(
         f.outputStream().use { out.compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, it) }
         setCoverFromFile(gameId, f)
         f.delete()
+    }
+
+    // ---------------------------------------------------------------- BGG collection export (CSV)
+
+    data class CsvImportResult(val added: Int, val skipped: Int, val expansionsSkipped: Int)
+
+    /** Progress of the background job that loads covers and details after an import. */
+    val enrichProgress = kotlinx.coroutines.flow.MutableStateFlow<Pair<Int, Int>?>(null)
+    private val enrichQueue = kotlinx.coroutines.channels.Channel<Long>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+    private var enrichTotal = 0
+    private var enrichDone = 0
+
+    init {
+        // one worker, gently paced, so BGG/Wikidata are not hammered during a big import
+        background.launch {
+            for (id in enrichQueue) {
+                runCatching { enrichImported(id) }
+                enrichDone++
+                enrichProgress.value = if (enrichDone >= enrichTotal) null else enrichDone to enrichTotal
+                delay(1200)
+            }
+        }
+    }
+
+    /** Imports BoardGameGeek's collection export. New boards are added when the shelf is full. */
+    suspend fun importBggCsv(text: String, includeExpansions: Boolean, onlyOwned: Boolean, progress: (Int, Int) -> Unit): CsvImportResult {
+        if (!BggCsv.looksLikeExport(text)) throw IOException(context.getString(R.string.import_not_csv))
+        val all = BggCsv.games(text).filter { !onlyOwned || it.owned }
+        val expansions = all.count { it.isExpansion }
+        val rows = all.filter { includeExpansions || !it.isExpansion }
+        val existing = db.games().all().mapNotNull { it.bggId }.toSet()
+        val todo = rows.filter { it.bggId !in existing }
+        val newIds = mutableListOf<Long>()
+        todo.forEachIndexed { i, r ->
+            val id = insertFromInfo(
+                GameInfo(
+                    name = r.name, year = r.year, minPlayers = r.minPlayers, maxPlayers = r.maxPlayers,
+                    playingTime = r.playingTime, minAge = r.minAge, bggRating = r.bggRating, bggWeight = r.bggWeight,
+                    bggRank = r.bggRank, bggId = r.bggId,
+                ),
+                userRating = r.userRating, enrich = false,
+            )
+            r.comment?.let { c -> db.games().get(id)?.let { g -> db.games().update(g.copy(notes = c)) } }
+            newIds += id
+            progress(i + 1, todo.size)
+        }
+        enrichTotal += newIds.size
+        enrichProgress.value = enrichDone to enrichTotal
+        newIds.forEach { enrichQueue.send(it) }
+        return CsvImportResult(todo.size, rows.size - todo.size, if (includeExpansions) 0 else expansions)
+    }
+
+    /** After an import: details from Wikidata/Wikipedia (by BGG id) and the cover from the BGG game page. */
+    private suspend fun enrichImported(gameId: Long) {
+        val g = db.games().get(gameId) ?: return
+        fillFromWiki(g)
+        val now = db.games().get(gameId) ?: return
+        if (now.coverPath == null && now.bggId != null) {
+            bggPageImage(now.bggId)?.let { trySetCover(gameId, it) }
+        }
+        if (db.games().get(gameId)?.coverPath == null) runCatching { autoCover(gameId) }
+    }
+
+    /** The cover picture BGG shows for a game (og:image of the public game page). */
+    suspend fun bggPageImage(bggId: Int): String? =
+        runCatching { pageImages("https://boardgamegeek.com/boardgame/$bggId").firstOrNull { "geekdo-images" in it } }.getOrNull()
+
+    /** Picture URLs a web page declares for itself (og:image, twitter:image, JSON-LD image). */
+    suspend fun pageImages(pageUrl: String): List<String> = withContext(Dispatchers.IO) {
+        val req = okhttp3.Request.Builder().url(pageUrl)
+            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36")
+            .header("Accept", "text/html").build()
+        val (finalUrl, html) = http.newCall(req).execute().use { r ->
+            if (!r.isSuccessful) return@withContext emptyList()
+            val ct = r.header("Content-Type").orEmpty()
+            if (ct.startsWith("image/")) return@withContext listOf(r.request.url.toString())
+            r.request.url to (r.body?.source()?.let { src -> src.request(800_000); src.buffer.clone().readUtf8() } ?: "")
+        }
+        val urls = mutableListOf<String>()
+        Regex("<meta[^>]+(?:property|name)=[\"'](?:og:image(?::secure_url)?|twitter:image(?::src)?)[\"'][^>]*>", RegexOption.IGNORE_CASE).findAll(html).forEach { m ->
+            Regex("content=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE).find(m.value)?.groupValues?.get(1)?.let { urls += it }
+        }
+        Regex("<link[^>]+rel=[\"']image_src[\"'][^>]*href=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE).findAll(html).forEach { urls += it.groupValues[1] }
+        Regex("\"image\"\\s*:\\s*(?:\\[\\s*)?\"(https?:[^\"]+)\"").findAll(html).take(4).forEach { urls += it.groupValues[1].replace("\\/", "/") }
+        urls.mapNotNull { u -> runCatching { finalUrl.resolve(android.text.Html.fromHtml(u, 0).toString())?.toString() }.getOrNull() }
+            .filter { it.startsWith("http") }.distinct()
+    }
+
+    // ---------------------------------------------------------------- info search
+
+    /** Fills empty fields from Wikidata/Wikipedia (by BGG id, Wikidata id or exact name). Returns the number of filled fields. */
+    suspend fun fillFromWiki(g: Game): Int {
+        val qid = g.wikidataId
+            ?: g.bggId?.let { runCatching { wiki.qidForBggId(it) }.getOrNull() }
+            ?: runCatching { wiki.search(g.name) }.getOrNull()
+                ?.firstOrNull { io.github.schnubbirunkel.boardshelf.net.ProductApi.norm(it.name) == io.github.schnubbirunkel.boardshelf.net.ProductApi.norm(g.name) }?.id
+            ?: return 0
+        val info = runCatching { wiki.details(qid) }.getOrNull() ?: return 0
+        return fillMissing(g.id, info.copy(name = g.name), wikidataId = qid)
+    }
+
+    /** Writes only fields that are still empty. Returns how many were filled. */
+    private suspend fun fillMissing(gameId: Long, info: GameInfo, wikidataId: String? = null): Int {
+        val cur = db.games().get(gameId) ?: return 0
+        var n = 0
+        fun <T> pick(old: T?, new: T?): T? = if (old == null && new != null) { n++; new } else old
+        fun pickList(old: String?, new: List<String>): String? = if (old.isNullOrBlank() && new.isNotEmpty()) { n++; new.joinToString(", ") } else old
+        val updated = cur.copy(
+            wikidataId = cur.wikidataId ?: wikidataId,
+            year = pick(cur.year, info.year),
+            minPlayers = pick(cur.minPlayers, info.minPlayers),
+            maxPlayers = pick(cur.maxPlayers, info.maxPlayers),
+            playingTime = pick(cur.playingTime, info.playingTime),
+            minAge = pick(cur.minAge, info.minAge),
+            description = pick(cur.description?.takeIf { it.isNotBlank() }, info.description),
+            designers = pickList(cur.designers, info.designers),
+            publishers = pickList(cur.publishers, info.publishers),
+            categories = pickList(cur.categories, info.categories),
+            mechanics = pickList(cur.mechanics, info.mechanics),
+            bggRating = pick(cur.bggRating, info.bggRating),
+            bggWeight = pick(cur.bggWeight, info.bggWeight),
+            bggRank = pick(cur.bggRank, info.bggRank),
+            wikiExtract = cur.wikiExtract ?: info.wikiExtract,
+            wikiUrl = cur.wikiUrl ?: info.wikiUrl,
+            imageUrl = cur.imageUrl ?: info.imageUrl,
+            updatedAt = System.currentTimeMillis(),
+        )
+        if (updated != cur) db.games().update(updated)
+        return n
+    }
+
+    data class InfoSearchResult(val filled: Int, val sources: List<String>, val errors: List<Throwable>)
+
+    /** "Search info online": BGG (with token), Wikidata/Wikipedia and – if configured – the AI's web research. */
+    suspend fun searchInfoOnline(gameId: Long): InfoSearchResult {
+        val sources = mutableListOf<String>()
+        val errors = mutableListOf<Throwable>()
+        var filled = 0
+        val g = db.games().get(gameId) ?: return InfoSearchResult(0, sources, errors)
+        if (g.bggId != null && bgg.hasToken) {
+            runCatching { fillMissing(gameId, bgg.details(g.bggId)) }.onSuccess { filled += it; sources += "BoardGameGeek" }.onFailure { errors += it }
+        }
+        runCatching { fillFromWiki(db.games().get(gameId)!!) }.onSuccess { if (it > 0) sources += "Wikidata/Wikipedia"; filled += it }.onFailure { errors += it }
+        if (ai.canSearchWeb) {
+            val cur = db.games().get(gameId)!!
+            runCatching { aiResearchFacts(cur) }.onSuccess { (n, _) -> filled += n; sources += aiName() }.onFailure { errors += it; log(cur.name, "Fehler: ${it.message}") }
+        }
+        return InfoSearchResult(filled, sources, errors)
+    }
+
+    private fun aiName() = when (settings.current.aiProvider) {
+        io.github.schnubbirunkel.boardshelf.net.AiProvider.CLAUDE -> "Claude"
+        io.github.schnubbirunkel.boardshelf.net.AiProvider.GEMINI -> "Gemini"
+        io.github.schnubbirunkel.boardshelf.net.AiProvider.OPENAI -> "ChatGPT"
+        else -> "KI"
+    }
+
+    /** Short log of what the AI did (shown in the settings, helps when nothing is found). */
+    val aiLog = kotlinx.coroutines.flow.MutableStateFlow<List<String>>(emptyList())
+    /** Last AI result per game (shown on the detail page). */
+    val aiStatus = kotlinx.coroutines.flow.MutableStateFlow<Map<Long, String>>(emptyMap())
+
+    private fun log(game: String, msg: String) {
+        val t = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+        aiLog.value = (listOf("$t  $game: $msg") + aiLog.value).take(60)
+    }
+
+    /** AI web research → fills empty fields; returns (filled fields, research). */
+    private suspend fun aiResearchFacts(g: Game): Pair<Int, io.github.schnubbirunkel.boardshelf.net.GameResearch> {
+        val lang = java.util.Locale.getDefault().getDisplayLanguage(java.util.Locale.ENGLISH).ifBlank { "English" }
+        log(g.name, "Websuche gestartet (${aiName()})")
+        val r = ai.researchGame(g.name, g.year, g.publishers?.substringBefore(','), g.ean, lang)
+        log(g.name, "Antwort: ${listOfNotNull(r.minPlayers?.let { "Spieler" }, r.playingTime?.let { "Dauer" }, r.description?.let { "Beschreibung" }).joinToString()} · ${r.boxImages.size} Bildlinks · ${r.sources.size} Quellen")
+        val n = fillMissing(
+            g.id,
+            GameInfo(
+                name = g.name, year = r.year, minPlayers = r.minPlayers, maxPlayers = r.maxPlayers, playingTime = r.playingTime,
+                minAge = r.minAge, description = r.description, designers = r.designers, publishers = r.publishers, categories = r.categories,
+            )
+        )
+        val cur = db.games().get(g.id)
+        val size = r.boxSizeCm?.sortedArrayDescending()
+        if (cur != null && size != null && cur.boxWidthCm == 29.6f && cur.boxHeightCm == 29.6f && cur.boxDepthCm == 7.2f) {
+            db.games().update(cur.copy(boxWidthCm = size[0], boxHeightCm = size[1], boxDepthCm = size[2]))
+        }
+        return n to r
     }
 
     // ---------------------------------------------------------------- BGG collection import
