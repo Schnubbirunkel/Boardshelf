@@ -19,10 +19,12 @@
 - **Regalansicht** – die Schachteln stehen mit dem Rücken nach vorn auf Regalböden, in echter Größe zueinander (Maße von BoardGameGeek, anpassbar).
 - **Umsortieren** – Schachtel lange gedrückt halten und auf einen anderen Platz oder Regalboden ziehen. Regalböden lassen sich anlegen, umbenennen, verschieben und löschen.
 - **Herausziehen in 3D** – Antippen zieht die Schachtel aus dem Regal, dreht sie und öffnet die Detailseite. Dort lässt sie sich mit dem Finger frei drehen (Doppeltippen setzt zurück).
-- **Spieldaten** von **BoardGameGeek** (Spieler, Dauer, Alter, Autor:innen, Verlage, Mechaniken, BGG-Wertung, Rang, Schachtelgröße) sowie **Wikidata/Wikipedia** (funktioniert auch ohne BGG-Token, Zusammenfassung in deiner Sprache).
+- **Barcode-Scanner** – Barcode auf der Schachtel scannen, das Spiel wird mit Cover angelegt (GameUPC inkl. europäischer Ausgaben, UPCitemdb, Open Products Facts, Wikidata).
+- **KI-Bilderkennung (optional)** – Claude, Gemini, ChatGPT oder ein selbst gehostetes Modell (Ollama, LM Studio …) wählt und schneidet Cover automatisch und erkennt Spiele auf einem Foto der Schachtel.
+- **Spieldaten** ohne Anmeldung aus **Wikidata/Wikipedia**, optional zusätzlich von **BoardGameGeek** (Spieler, Dauer, Alter, Autor:innen, Verlage, Mechaniken, BGG-Wertung, Rang, Schachtelgröße) sowie **Wikidata/Wikipedia** .
 - **BGG-Sammlung importieren** – Benutzername eintragen, alle eigenen Spiele inkl. deiner BGG-Wertung landen im Regal.
 - **Bewerten** – Gesamtnote (0,5er-Schritte bis 10), Spielspaß, Wiederspielwert, Material & Optik, Regelverständlichkeit und ein Fazit.
-- **Spielstände** – Spieltisch fotografieren (oder Foto aus der Galerie), Titel und Notiz dazu („Blau ist dran, 37 Punkte …“). Der neueste Stand ist markiert, Fotos lassen sich zoomen und teilen.
+- **Spielstände** – Spieltisch fotografieren, mehrere Fotos pro Spielstand (Kamera oder Galerie), Titel und Notiz dazu („Blau ist dran, 37 Punkte …“). Der neueste Stand ist markiert, Fotos lassen sich zoomen und teilen.
 - **Anleitungen** – PDF importieren, per Link laden, im eingebauten Browser suchen (BGG-Dateibereich, DuckDuckGo, Google, 1j1ju – jedes geöffnete PDF kann gespeichert werden) oder die gedruckte Anleitung **mit der Kamera scannen**. Alles offline lesbar, mit Zoom; Scans lassen sich als PDF teilen.
 - **Cover-Suche** – auch ohne BGG-Token: in Bildersuche, Amazon oder auf der BGG-Website lange auf das richtige Schachtelbild drücken und übernehmen. Danach lässt sich das Bild **zuschneiden** (Schachtelformat, quadratisch oder frei, drehbar), das geht auch bei Kamerafotos und vorhandenen Covern. Automatisch wird nichts geraten; Wiki-Bilder werden nur genutzt, wenn sie eindeutig die Schachtel zeigen.
 - **Eigenes Cover** fotografieren, Daten von Hand bearbeiten, Spiele ohne Online-Eintrag manuell anlegen.
@@ -34,13 +36,10 @@
 
 APK aus dem [neuesten Release](https://github.com/Schnubbirunkel/Boardshelf/releases/latest) herunterladen und installieren (Android 8.0 oder neuer, „Installation aus unbekannten Quellen“ erlauben).
 
-## BoardGameGeek-Token
+## Datenquellen & KI
 
-Seit 2025 verlangt BoardGameGeek für seine XML-API einen kostenlosen Anwendungs-Token.
-1. Auf <https://boardgamegeek.com/applications> eine (nicht-kommerzielle) Anwendung registrieren.
-2. Den Token in Boardshelf unter **Einstellungen → BoardGameGeek** einfügen.
-
-Ohne Token sucht die App in Wikidata und Wikipedia.
+- Ohne jede Anmeldung: Wikidata/Wikipedia (Spieldaten), GameUPC-Testzugang, UPCitemdb und Open Products Facts (Barcodes & Cover).
+- Optional: eigener GameUPC-Schlüssel (kostenlos, gameupc.com), BoardGameGeek-Token, KI-Anbieter mit eigenem API-Schlüssel oder ein selbst gehostetes OpenAI-kompatibles Modell (z. B. Ollama mit `qwen2.5vl`). Alles unter **Einstellungen**.
 
 ## Bauen
 
@@ -49,7 +48,7 @@ Ohne Token sucht die App in Wikidata und Wikipedia.
 ./gradlew assembleRelease      # signiert mit dem Schlüssel aus den Umgebungsvariablen (siehe unten)
 ```
 
-GitHub Actions baut bei jedem Push die APKs; ein Tag `v*` erzeugt ein Release.
+GitHub Actions baut bei jedem Push die APKs. Steht in `VERSION` eine neue Versionsnummer, wird automatisch ein Release mit APK und Screenshots veröffentlicht.
 Die APKs werden mit dem Projektschlüssel aus `keystore/` signiert, damit gehen Updates direkt über die installierte Version. Optional lässt sich ein eigener geheimer Schlüssel per Secrets hinterlegen: [docs/SIGNING.md](docs/SIGNING.md).
 
 Technik: Kotlin, Jetpack Compose, Room, OkHttp, Coil. Die 3D-Schachtel ist ein eigener kleiner Software-Renderer (perspektivische Texturabbildung per `Matrix.setPolyToPoly`), ganz ohne OpenGL.
@@ -60,7 +59,9 @@ Technik: Kotlin, Jetpack Compose, Room, OkHttp, Coil. Die 3D-Schachtel ist ein e
 
 Boardshelf shows your board game collection as a shelf. Boxes stand with their spines facing out, true to scale. Long-press and drag to rearrange them across shelf boards. Tap a box to watch it get pulled out of the shelf in 3D, turn around and become the detail page, where you can spin it freely.
 
-- Game data from **BoardGameGeek** (needs a free API token from <https://boardgamegeek.com/applications>) and **Wikidata/Wikipedia** (works without a token).
+- **Barcode scanner**: scan the box, the game is added with its cover (GameUPC, UPCitemdb, Open Products Facts, Wikidata).
+- Game data from **Wikidata/Wikipedia** without any sign-up, optionally **BoardGameGeek**.
+- Optional **vision AI** (Claude, Gemini, ChatGPT or self-hosted via Ollama/LM Studio) picks and crops covers and recognises games on a photo of the box.
 - **Import your BGG collection** including your own ratings.
 - **Ratings**: overall score plus fun, replayability, components and rules clarity, and a written review.
 - **Game states**: photograph the table to save a running game, with title and note.

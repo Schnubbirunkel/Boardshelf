@@ -157,14 +157,15 @@ fun BarcodeScreen(initialCode: String?, onBack: () -> Unit, onOpenGame: (Long) -
                 ) {
                     item {
                         val p = st.result.products.firstOrNull()
+                        val upc = st.result.hits.firstOrNull { it.source == Source.GAMEUPC }
                         GlassCard(Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                                val img = st.result.products.flatMap { it.images }.firstOrNull()
+                                val img = upc?.thumbnail ?: st.result.products.flatMap { it.images }.firstOrNull()
                                 if (img != null) AsyncImage(img, null, Modifier.size(84.dp).clip(RoundedCornerShape(14.dp)), contentScale = ContentScale.Crop)
                                 Column(Modifier.weight(1f)) {
                                     Text(stringResource(R.string.barcode_code, st.result.ean), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(p?.title ?: stringResource(R.string.barcode_unknown), style = MaterialTheme.typography.titleMedium)
-                                    p?.let { Text(it.source, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) }
+                                    Text(upc?.name ?: p?.title ?: stringResource(R.string.barcode_unknown), style = MaterialTheme.typography.titleMedium)
+                                    (if (upc != null) "GameUPC" else p?.source)?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) }
                                 }
                             }
                         }
