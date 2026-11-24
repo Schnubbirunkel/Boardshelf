@@ -88,29 +88,45 @@ fun BggImportScreen(onBack: () -> Unit) {
         }
     }
 
+    /**
+     * Downloads the export inside the logged-in WebView (JavaScript fetch on boardgamegeek.com),
+     * so BGG's bot check and the login session apply exactly as in the browser.
+     */
     fun downloadExport() {
         val user = username.trim()
+        val wv = webView ?: return
         if (user.isEmpty()) return
         repo.settings.update { it.copy(bggUsername = user) }
+        if (wv.url?.contains("boardgamegeek.com") != true) {
+            status = context.getString(R.string.import_need_login); return
+        }
         running = true
         status = context.getString(R.string.import_downloading)
-        scope.launch {
-            val url = "https://boardgamegeek.com/geekcollection.php?action=exportcsv&subtype=boardgame&username=${URLEncoder.encode(user, "UTF-8")}&all=1&exporttype=csv"
-            val text = try {
-                withContext(Dispatchers.IO) {
-                    val req = okhttp3.Request.Builder().url(url)
-                        .header("Cookie", CookieManager.getInstance().getCookie("https://boardgamegeek.com") ?: "")
-                        .header("User-Agent", webView?.settings?.userAgentString ?: "Mozilla/5.0")
-                        .build()
-                    repo.http.newCall(req).execute().use { it.body?.string() ?: "" }
+        val url = "https://boardgamegeek.com/geekcollection.php?action=exportcsv&subtype=boardgame&username=${URLEncoder.encode(user, "UTF-8")}&all=1&exporttype=csv"
+        wv.evaluateJavascript(
+            """
+            fetch(${org.json.JSONObject.quote(url)}, {credentials: 'include'})
+              .then(function(r) { return r.text(); })
+              .then(function(t) { BoardshelfBridge.onExport(t); })
+              .catch(function(e) { BoardshelfBridge.onError(String(e)); });
+            """.trimIndent(), null
+        )
+    }
+
+    // called by the JavaScript above (on a background thread) → back to the UI
+    val bridge = remember {
+        object {
+            @android.webkit.JavascriptInterface
+            fun onExport(text: String) {
+                scope.launch(Dispatchers.Main) {
+                    if (BggCsv.looksLikeExport(text)) runImport(text)
+                    else { running = false; status = context.getString(R.string.import_need_login) }
                 }
-            } catch (e: Exception) {
-                status = context.errorText(e); running = false; return@launch
             }
-            if (BggCsv.looksLikeExport(text)) runImport(text)
-            else {
-                running = false
-                status = context.getString(R.string.import_need_login)
+
+            @android.webkit.JavascriptInterface
+            fun onError(message: String) {
+                scope.launch(Dispatchers.Main) { running = false; status = message }
             }
         }
     }
@@ -167,20 +183,15 @@ fun BggImportScreen(onBack: () -> Unit) {
                         CookieManager.getInstance().setAcceptCookie(true)
                         CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                         webViewClient = WebViewClient()
+                        addJavascriptInterface(bridge, "BoardshelfBridge")
                         // if the user exports manually on the website, take the downloaded CSV
                         setDownloadListener { url, _, _, _, _ ->
-                            if ("export" in url || url.endsWith(".csv") || "csv" in url) {
-                                scope.launch {
-                                    val text = withContext(Dispatchers.IO) {
-                                        runCatching {
-                                            repo.http.newCall(
-                                                okhttp3.Request.Builder().url(url)
-                                                    .header("Cookie", CookieManager.getInstance().getCookie(url) ?: "").build()
-                                            ).execute().use { it.body?.string() ?: "" }
-                                        }.getOrDefault("")
-                                    }
-                                    if (BggCsv.looksLikeExport(text)) runImport(text) else status = context.getString(R.string.import_need_login)
-                                }
+                            if ("export" in url || "csv" in url) {
+                                evaluateJavascript(
+                                    "fetch(" + org.json.JSONObject.quote(url) + ", {credentials:'include'}).then(function(r){return r.text();})" +
+                                        ".then(function(t){BoardshelfBridge.onExport(t);}).catch(function(e){BoardshelfBridge.onError(String(e));});",
+                                    null
+                                )
                             }
                         }
                         webView = this
