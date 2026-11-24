@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
                             navArgument("shelf") { type = NavType.BoolType; defaultValue = false },
                         )
                     ) { entry ->
-                        val id = entry.arguments?.getLong("id") ?: return@composable
+                        val id = entry.arguments?.getLong("id") ?: return@screen
                         GameDetailScreen(
                             gameId = id,
                             initialTab = entry.arguments?.getInt("tab") ?: 0,
