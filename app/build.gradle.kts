@@ -22,12 +22,20 @@ android {
 
     signingConfigs {
         create("release") {
-            val ks = System.getenv("BOARDSHELF_KEYSTORE")
+            // Own key from CI secrets if present, otherwise the public project key from the repo
+            // (same key for every build, so updates install over the previous version).
+            fun env(name: String) = System.getenv(name)?.takeIf { it.isNotBlank() }
+            val ks = env("BOARDSHELF_KEYSTORE")
             if (ks != null && file(ks).exists()) {
                 storeFile = file(ks)
-                storePassword = System.getenv("BOARDSHELF_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("BOARDSHELF_KEY_ALIAS")
-                keyPassword = System.getenv("BOARDSHELF_KEY_PASSWORD")
+                storePassword = env("BOARDSHELF_KEYSTORE_PASSWORD")
+                keyAlias = env("BOARDSHELF_KEY_ALIAS")
+                keyPassword = env("BOARDSHELF_KEY_PASSWORD")
+            } else {
+                storeFile = file("${rootDir}/keystore/boardshelf-public.jks")
+                storePassword = "boardshelf-public"
+                keyAlias = "boardshelf"
+                keyPassword = "boardshelf-public"
             }
         }
     }
@@ -37,8 +45,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            val rel = signingConfigs.getByName("release")
-            signingConfig = if (rel.storeFile != null) rel else signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             applicationIdSuffix = ".debug"

@@ -1,5 +1,9 @@
 # Signaturschlüssel für Boardshelf einrichten
 
+> **Standard (nichts zu tun):** Alle Builds werden mit dem öffentlichen Projektschlüssel `keystore/boardshelf-public.jks` signiert (wie bei Barkeep). Damit gehen Updates direkt über die installierte Version. Nachteil: Der Schlüssel ist öffentlich.
+>
+> **Optional, sicherer:** einen eigenen, geheimen Schlüssel als GitHub-Secret hinterlegen (Anleitung unten). Ist er gesetzt, hat er Vorrang. Beim Wechsel muss die App einmal neu installiert werden.
+
 Android installiert ein Update nur, wenn die neue APK mit **demselben Schlüssel** signiert ist wie die installierte.
 Ohne eigenen Schlüssel signiert GitHub jede APK mit einem neuen Zufallsschlüssel, dann geht ein Update nur über Deinstallieren (und dabei sind die Daten weg).
 

@@ -50,7 +50,7 @@ Ohne Token sucht die App in Wikidata und Wikipedia.
 ```
 
 GitHub Actions baut bei jedem Push die APKs; ein Tag `v*` erzeugt ein Release.
-Für eine dauerhaft gleiche Signatur (damit Updates ohne Neuinstallation gehen) braucht das Repo vier Secrets – Schritt-für-Schritt-Anleitung: [docs/SIGNING.md](docs/SIGNING.md).
+Die APKs werden mit dem Projektschlüssel aus `keystore/` signiert, damit gehen Updates direkt über die installierte Version. Optional lässt sich ein eigener geheimer Schlüssel per Secrets hinterlegen: [docs/SIGNING.md](docs/SIGNING.md).
 
 Technik: Kotlin, Jetpack Compose, Room, OkHttp, Coil. Die 3D-Schachtel ist ein eigener kleiner Software-Renderer (perspektivische Texturabbildung per `Matrix.setPolyToPoly`), ganz ohne OpenGL.
 
