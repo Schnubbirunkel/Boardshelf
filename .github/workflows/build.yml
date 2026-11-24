@@ -3,10 +3,7 @@ name: Build
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
-  release:
-    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -27,19 +24,23 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
-      - name: Prepare signing key
+      - name: Prepare own signing key (optional)
         if: env.KEYSTORE_B64 != ''
         run: |
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
           echo "BOARDSHELF_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
       - name: Version
+        id: v
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          [ -z "$TAG" ] && [[ "$GITHUB_REF" == refs/tags/v* ]] && TAG="$GITHUB_REF_NAME"
-          if [ -n "$TAG" ]; then V="${TAG#v}"; else V="0.0.0-dev.${{ github.run_number }}"; fi
-          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
-          echo "APP_VERSION=$V" >> "$GITHUB_ENV"
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          # A release is made automatically when VERSION has no release yet (pushes to main only).
+          if [[ "$GITHUB_REF" == refs/heads/main ]] && ! git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build APKs
         env:
@@ -49,20 +50,30 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease assembleDebug \
-            -PappVersionName="$APP_VERSION" -PappVersionCode=${{ github.run_number }}
+            -PappVersionName="${{ steps.v.outputs.name }}" -PappVersionCode=${{ github.run_number }}
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/Boardshelf-$APP_VERSION.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "dist/Boardshelf-$APP_VERSION-debug.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/Boardshelf-${{ steps.v.outputs.name }}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/Boardshelf-${{ steps.v.outputs.name }}-debug.apk"
 
       - uses: actions/upload-artifact@v5
         with:
-          name: boardshelf-apk
+          name: boardshelf-${{ steps.v.outputs.name }}
           path: dist/*.apk
 
-      - name: Attach APK to release
-        if: env.RELEASE_TAG != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Release notes
+        if: steps.v.outputs.release == 'true'
         run: |
-          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --title "Boardshelf $APP_VERSION" --notes "Boardshelf $APP_VERSION"
-          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "dist/Boardshelf-$APP_VERSION.apk" --clobber
+          NOTES="docs/release-notes/v${{ steps.v.outputs.name }}.md"
+          if [ -f "$NOTES" ]; then cp "$NOTES" dist/notes.md; else echo "Boardshelf ${{ steps.v.outputs.name }}" > dist/notes.md; fi
+
+      - name: Release
+        if: steps.v.outputs.release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.name }}
+          name: Boardshelf ${{ steps.v.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          body_path: dist/notes.md
+          files: |
+            dist/Boardshelf-${{ steps.v.outputs.name }}.apk
+            docs/screenshots/de_*.png
